@@ -15,22 +15,22 @@ import {
 } from '@heroui/react';
 import { FaSearch, FaChevronDown } from 'react-icons/fa';
 import { ThemeSwitch } from '../ThemeSwitch';
+import { signOut, useSession } from '@/lib/auth-client';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session, isPending } = useSession();
+  const user = session?.user;
 
-  // Mock Authentication State (Modify to test states)
-  const isLoggedIn = true;
-  const userRole = 'lawyer'; // Options: 'client', 'lawyer', 'admin'
+  // কারেন্ট ইউজারের রোল (সেশন থেকে নেওয়া হচ্ছে, ডিফল্ট 'client')
+  const currentUserRole = user?.role || 'client';
 
-  // Standard Navigation Links
   const navLinks = [
     { label: 'Home', href: '/' },
     { label: 'Browse Lawyers', href: '/lawyers' },
   ];
 
-  // Role-Based Dashboard Links (Uncommented to prevent ReferenceErrors below)
   const dashboardLinks = {
     client: [
       { label: 'My Appointments', href: '/dashboard/client/appointments' },
@@ -39,78 +39,60 @@ export default function Navbar() {
     ],
     lawyer: [
       { label: 'Case Schedule', href: '/dashboard/lawyer/schedule' },
-      { label: 'Earnings & Analytics', href: '/dashboard/lawyer/analytics' },
+      { label: 'Analytics', href: '/dashboard/lawyer/analytics' },
       { label: 'Profile Settings', href: '/dashboard/lawyer/settings' },
     ],
     admin: [
       { label: 'User Management', href: '/dashboard/admin/users' },
-      {
-        label: 'Verification Requests',
-        href: '/dashboard/admin/verifications',
-      },
+      { label: 'Verifications', href: '/dashboard/admin/verifications' },
     ],
   };
 
+  // ড্যাশবোর্ডের href রুট ঠিক করা হয়েছে যাতে অবজেক্ট পাস না হয়ে সঠিক পাথ পায়
+  if (user?.email) {
+    navLinks.push({
+      label: 'Dashboard',
+      href: '/dashboard',
+    });
+  }
+
   const isActive = href => pathname === href;
+  const handleLogout = async () => {
+    await signOut();
+  };
 
   return (
     <nav className="sticky top-0 z-40 w-full border-b border-default-200 bg-background/70 backdrop-blur-lg">
       <header className="flex h-16 items-center justify-between px-6 max-w-7xl mx-auto">
-        {/* LEFT SECTION: Hamburger Menu Button & Logo */}
+        {/* LEFT */}
         <div className="flex items-center gap-4">
           <button
-            className="md:hidden text-default-600 hover:text-[#005A5B] focus:outline-none"
+            className="md:hidden text-default-600"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
           >
-            <span className="sr-only">Menu</span>
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              {isMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              )}
-            </svg>
+            {isMenuOpen ? '✕' : '☰'}
           </button>
 
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-bold text-lg tracking-wide"
-          >
+          <Link href="/" className="flex items-center gap-2">
             <Image
-              height={80}
-              width={180}
               src="/asset/logo.png"
               alt="logo"
+              width={150}
+              height={50}
               priority
             />
           </Link>
         </div>
 
-        {/* CENTER SECTION: Desktop Static Links & Role Dropdown */}
-        <ul className="hidden items-center gap-6 md:flex list-none m-0 p-0">
+        {/* CENTER */}
+        <ul className="hidden md:flex items-center gap-6">
           {navLinks.map(link => (
             <li key={link.href}>
               <Link
                 href={link.href}
-                className={`text-sm font-medium transition-colors ${
+                className={`text-sm font-medium ${
                   isActive(link.href)
-                    ? 'text-[#005A5B] font-semibold'
+                    ? 'text-[#005A5B]'
                     : 'text-default-600 hover:text-[#005A5B]'
                 }`}
               >
@@ -118,180 +100,89 @@ export default function Navbar() {
               </Link>
             </li>
           ))}
-
-          {/* Role Dropdown */}
-          {/* {isLoggedIn && (
-            <li>
-              <Dropdown>
-                <DropdownTrigger>
-                  <Button
-                    disableRipple
-                    className="p-0 bg-transparent data-[hover=true]:bg-transparent text-sm font-medium text-default-600 data-[hover=true]:text-[#005A5B] min-w-0 flex items-center gap-1 cursor-pointer"
-                    endContent={<FaChevronDown size={10} />}
-                    radius="sm"
-                    variant="light"
-                  >
-                    Dashboard
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu aria-label="Dashboard Options" variant="flat">
-                  {dashboardLinks[userRole]?.map(subLink => (
-                    <DropdownItem
-                      key={subLink.href}
-                      as={Link}
-                      href={subLink.href}
-                      className={
-                        isActive(subLink.href)
-                          ? 'text-[#005A5B] font-semibold'
-                          : ''
-                      }
-                    >
-                      {subLink.label}
-                    </DropdownItem>
-                  ))}
-                </DropdownMenu>
-              </Dropdown>
-            </li>
-          )} */}
         </ul>
 
-        {/* RIGHT SECTION: Search Bar & User Session Handlers */}
-        <div className="flex items-center gap-4">
-          {/* Global Search Bar (Hidden on smaller screens) */}
+        {/* RIGHT */}
+        <div className="flex items-center gap-3">
+          {/* Search */}
           <div className="hidden sm:block">
-            <Input
-              aria-label="Name"
-              className="w-64"
-              placeholder="Sarch lawyer......."
-            />
-          </div>
-          <div>
-            <ThemeSwitch/>
+            <Input className="w-64" placeholder="Search lawyers..." />
           </div>
 
-          {/* {isLoggedIn ? (
-            <Dropdown placement="bottom-end">
-              <DropdownTrigger>
-                <Avatar
-                  isBordered
-                  as="button"
-                  className="transition-transform"
-                  color="default"
-                  size="sm"
-                  src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
-                />
-              </DropdownTrigger>
-              <DropdownMenu aria-label="User Profile Interface" variant="flat">
-                <DropdownItem key="profile" className="h-14 gap-2">
-                  <p className="font-semibold text-xs text-default-500">
-                    Signed in as
-                  </p>
-                  <p className="font-semibold text-[#005A5B]">
-                    user@legalease.com
-                  </p>
-                </DropdownItem>
-                <DropdownItem
-                  key="logout"
-                  color="danger"
-                  className="text-danger"
-                >
-                  Log Out
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          ) : (
+          {/* Theme */}
+          <ThemeSwitch />
+
+          {/* AUTH */}
+          {user ? (
             <div className="flex items-center gap-3">
-              <Link
-                href="/login"
-                className="text-sm font-medium text-default-600 hover:text-[#005A5B]"
-              >
-                Login
-              </Link>
-              <Button
-                as={Link}
-                href="/signup"
-                size="sm"
-                radius="full"
-                className="bg-[#005A5B] text-white font-medium"
-              >
-                Sign Up
+              <Avatar src={user?.image} name="User" className="w-9 h-9" />
+
+              <p className="text-sm font-medium">Hi, {user?.name}</p>
+
+              <Button size="sm" color="danger" onClick={handleLogout}>
+                Logout
               </Button>
             </div>
-          )} */}
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link href="/auth/signin" className="text-sm text-default-600">
+                Sign In
+              </Link>
+
+              <Link href="/auth/signup">
+                <Button size="sm" className="bg-[#005A5B] text-white">
+                  Sign Up
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* MOBILE BREAKDOWN EXPANSION MENU */}
+      {/* MOBILE MENU */}
       {isMenuOpen && (
-        <div className="border-t border-default-200 bg-background md:hidden">
-          <div className="p-4 space-y-4">
-            {/* Contextual Search in Mobile Hamburger Menu */}
-            <Input
-              classNames={{
-                base: 'w-full h-10',
-                mainWrapper: 'h-full',
-                input: 'text-sm',
-                inputWrapper:
-                  'h-full font-normal text-default-500 bg-default-100',
-              }}
-              placeholder="Search lawyers..."
-              size="sm"
-              startContent={<FaSearch size={14} className="text-default-400" />}
-              type="search"
-            />
+        <div className="md:hidden border-t border-default-200 bg-background">
+          <div className="p-4 space-y-3">
+            <Input className="w-64" placeholder="Search lawyers..." />
 
-            <ul className="flex flex-col gap-1 list-none m-0 p-0">
-              {navLinks.map(link => (
-                <li key={link.href}>
+            {navLinks.map(link => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="block py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            {user && (
+              <>
+                <div className="border-t my-2 border-default-200" />
+                <p className="text-xs font-black uppercase tracking-wider text-default-400 mb-1">
+                  Dashboard Links ({currentUserRole})
+                </p>
+
+                {dashboardLinks[currentUserRole]?.map(link => (
                   <Link
+                    key={link.href}
                     href={link.href}
-                    className={`block py-2 text-base ${
-                      isActive(link.href)
-                        ? 'text-[#005A5B] font-bold'
-                        : 'text-default-700'
-                    }`}
+                    className="block py-1.5 text-sm font-semibold text-default-600 hover:text-[#005A5B]"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {link.label}
                   </Link>
-                </li>
-              ))}
+                ))}
 
-              {/* Mobile Extended Dashboard Elements */}
-              {isLoggedIn && (
-                <>
-                  <div className="w-full border-t border-default-100 my-2" />
-                  <span className="text-[11px] font-bold text-default-400 uppercase tracking-wider block px-1 mb-1">
-                    Dashboard ({userRole})
-                  </span>
-                  {dashboardLinks[userRole]?.map(subLink => (
-                    <li key={subLink.href}>
-                      <Link
-                        href={subLink.href}
-                        className={`block py-1.5 pl-3 text-sm ${
-                          isActive(subLink.href)
-                            ? 'text-[#005A5B] font-semibold'
-                            : 'text-default-600'
-                        }`}
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {subLink.label}
-                      </Link>
-                    </li>
-                  ))}
-                  <div className="w-full border-t border-default-100 my-2" />
-                  <li>
-                    <Link
-                      href="/logout"
-                      className="block py-2 text-base text-danger font-medium"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Log Out
-                    </Link>
-                  </li>
-                </>
-              )}
-            </ul>
+                <Button
+                  className="w-full mt-4"
+                  color="danger"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

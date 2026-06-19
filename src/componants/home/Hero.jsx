@@ -22,6 +22,7 @@ import 'swiper/css/effect-fade';
 import 'swiper/css/pagination';
 
 const Hero = () => {
+  
   const slides = [
     '/asset/banner/hero1.jpg',
     '/asset/banner/hero2.jpg',
@@ -120,7 +121,6 @@ const Hero = () => {
           ))}
         </Swiper>
       </div>
-
       {/* FOREGROUND CONTENT SECTION */}
       <motion.div
         variants={containerVariants}
@@ -199,7 +199,7 @@ const Hero = () => {
           ))}
         </motion.div>
       </motion.div>
-
+     
       <style jsx global>{`
         .swiper-pagination-bullet-active {
           background: #98ff98 !important;
