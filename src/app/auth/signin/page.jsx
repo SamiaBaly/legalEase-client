@@ -7,11 +7,15 @@ import { toast } from 'react-hot-toast';
 
 import { FaGoogle, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { signIn } from '@/lib/auth-client';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const SignInPage = () => {
   // States for form interaction
   const [isVisible, setIsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
+  const router = useRouter();
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
@@ -19,17 +23,17 @@ const SignInPage = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // ✅ ১. প্রথমে ফর্মের ভেতরের ইনপুট ডাটাগুলো বের করে নিতে হবে
+    
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email');
     const password = formData.get('password');
 
     try {
-      // ২. এখন signIn.email-এর ভেতরে এগুলো পাঠালে আর এরর আসবে না
+      
       const { data, error } = await signIn.email({
         email,
         password,
-        callbackURL: '/', // লগইন সফল হলে যেখানে রিডাইরেক্ট হবে
+        
       });
 
       if (error) {
@@ -38,8 +42,7 @@ const SignInPage = () => {
 
       toast.success('Logged in successfully!');
 
-      // সফল লগইনের পর হোমপেজে পাঠানো এবং সেশন আপডেট করা
-      router.push('/');
+     router.push(redirectTo);
       router.refresh();
     } catch (error) {
       toast.error(error.message || 'Something went wrong.');
@@ -156,14 +159,15 @@ const SignInPage = () => {
 
               {/* DONT HAVE AN ACCOUNT LINK */}
               <p className="text-xs font-semibold text-default-500 dark:text-zinc-400 mt-1">
-                Don't have an account?{' '}
+                Dont have an account?{' '}
                 <Link
                   href="/auth/signup"
                   className="text-[#005A5B] dark:text-[#20B2AA] hover:underline font-bold pl-0.5"
                 >
-                  Sign Up
+                  Sign in
                 </Link>
               </p>
+              <Link href={ `/auth/signup?redirect=${redirectTo}`}>Create a new account</Link>
             </div>
           </form>
         </div>

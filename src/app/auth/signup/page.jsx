@@ -1,8 +1,8 @@
-'use client'; // Fixes the Next.js Server Component function serialization error
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // ✅ রিডাইরেক্ট করার জন্য ইম্পোর্ট করা হলো
+import { useRouter, useSearchParams } from 'next/navigation'; 
 import { Button } from '@heroui/react';
 import { toast } from 'react-hot-toast';
 
@@ -10,12 +10,15 @@ import { FaGoogle, FaUser, FaGavel, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { signIn, signUp } from '@/lib/auth-client';
 
 const SignUpPage = () => {
-  const router = useRouter(); // ✅ রাউটার ইনিশিয়ালাইজ করা হলো
+  const router = useRouter(); 
 
   // States for form interaction
   const [role, setRole] = useState('client');
   const [isVisible, setIsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+   const redirectTo = searchParams.get("redirect") || "/";
+ 
 
   const toggleVisibility = () => setIsVisible(!isVisible);
 
@@ -34,12 +37,12 @@ const SignUpPage = () => {
         email,
         password,
         name,
-        // ✅ Better Auth-এ কাস্টম ফিল্ড (যেমন: role) এভাবে data অবজেক্টের ভেতরে পাঠাতে হয়
-        data: {
+       
           role: role,
-        },
-        callbackURL: '/',
+        
+       
       });
+     
 
       if (error) {
         throw new Error(error.message || 'Signup failed. Please try again.');
@@ -49,9 +52,8 @@ const SignUpPage = () => {
         duration: 4000,
       });
 
-      // ✅ সফলভাবে সাইন-আপ হলে হোমপেজে বা ড্যাশবোর্ডে পুশ করা হচ্ছে
-      router.push('/');
-      router.refresh(); // সেশন ডেটা সিঙ্ক করার জন্য রিফ্রেশ
+       router.push(redirectTo);
+      router.refresh(); 
     } catch (error) {
       toast.error(error.message || 'Something went wrong. Please try again.', {
         duration: 4000,
@@ -67,7 +69,7 @@ const SignUpPage = () => {
     try {
       await signIn.social({
         provider: 'google',
-        callbackURL: '/', // ড্যাশবোর্ডের পরিবর্তে হোমপেজে যেতে চাইলে এখানে '/' রাখুন
+        callbackURL: '/', 
       });
     } catch (error) {
       toast.error('Google sign-in failed. Please try again.');
@@ -214,7 +216,7 @@ const SignUpPage = () => {
               <p className="text-xs font-semibold text-default-500 dark:text-zinc-400 mt-1">
                 Already have an account?{' '}
                 <Link
-                  href="/auth/signin"
+                  href={`/auth/signin?redirect=${redirectTo}`}
                   className="text-[#005A5B] dark:text-[#20B2AA] hover:underline font-bold pl-0.5"
                 >
                   Sign In

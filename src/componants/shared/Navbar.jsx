@@ -4,51 +4,23 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import {
-  Button,
-  Input,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Avatar,
-} from '@heroui/react';
-import { FaSearch, FaChevronDown } from 'react-icons/fa';
+import { Button, Input, Avatar } from '@heroui/react';
 import { ThemeSwitch } from '../ThemeSwitch';
 import { signOut, useSession } from '@/lib/auth-client';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { data: session, isPending } = useSession();
+  const { data: session } = useSession();
   const user = session?.user;
 
-  // কারেন্ট ইউজারের রোল (সেশন থেকে নেওয়া হচ্ছে, ডিফল্ট 'client')
-  const currentUserRole = user?.role || 'client';
-
+  // নেভবারের মেইন লিংকসমূহ
   const navLinks = [
     { label: 'Home', href: '/' },
     { label: 'Browse Lawyers', href: '/lawyers' },
   ];
 
-  const dashboardLinks = {
-    client: [
-      { label: 'My Appointments', href: '/dashboard/client/appointments' },
-      { label: 'Consultation History', href: '/dashboard/client/history' },
-      { label: 'Profile Settings', href: '/dashboard/client/settings' },
-    ],
-    lawyer: [
-      { label: 'Case Schedule', href: '/dashboard/lawyer/schedule' },
-      { label: 'Analytics', href: '/dashboard/lawyer/analytics' },
-      { label: 'Profile Settings', href: '/dashboard/lawyer/settings' },
-    ],
-    admin: [
-      { label: 'User Management', href: '/dashboard/admin/users' },
-      { label: 'Verifications', href: '/dashboard/admin/verifications' },
-    ],
-  };
-
-  // ড্যাশবোর্ডের href রুট ঠিক করা হয়েছে যাতে অবজেক্ট পাস না হয়ে সঠিক পাথ পায়
+  // ইউজার লগইন থাকলে নেভবারে সরাসরি ড্যাশবোর্ড বাটন যোগ হবে
   if (user?.email) {
     navLinks.push({
       label: 'Dashboard',
@@ -57,6 +29,7 @@ export default function Navbar() {
   }
 
   const isActive = href => pathname === href;
+
   const handleLogout = async () => {
     await signOut();
   };
@@ -64,15 +37,14 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-40 w-full border-b border-default-200 bg-background/70 backdrop-blur-lg">
       <header className="flex h-16 items-center justify-between px-6 max-w-7xl mx-auto">
-        {/* LEFT */}
+        {/* LEFT: Logo & Mobile Toggle */}
         <div className="flex items-center gap-4">
           <button
-            className="md:hidden text-default-600"
+            className="md:hidden text-default-600 text-xl"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? '✕' : '☰'}
           </button>
-
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/asset/logo.png"
@@ -84,7 +56,7 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* CENTER */}
+        {/* CENTER: Desktop Navigation Links */}
         <ul className="hidden md:flex items-center gap-6">
           {navLinks.map(link => (
             <li key={link.href}>
@@ -92,7 +64,7 @@ export default function Navbar() {
                 href={link.href}
                 className={`text-sm font-medium ${
                   isActive(link.href)
-                    ? 'text-[#005A5B]'
+                    ? 'text-[#005A5B] font-bold'
                     : 'text-default-600 hover:text-[#005A5B]'
                 }`}
               >
@@ -102,24 +74,30 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* RIGHT */}
+        {/* RIGHT: Search, Theme, Auth Profile */}
         <div className="flex items-center gap-3">
-          {/* Search */}
           <div className="hidden sm:block">
             <Input className="w-64" placeholder="Search lawyers..." />
           </div>
 
-          {/* Theme */}
           <ThemeSwitch />
 
-          {/* AUTH */}
           {user ? (
             <div className="flex items-center gap-3">
-              <Avatar src={user?.image} name="User" className="w-9 h-9" />
-
-              <p className="text-sm font-medium">Hi, {user?.name}</p>
-
-              <Button size="sm" color="danger" onClick={handleLogout}>
+              <Avatar
+                src={user?.image}
+                name={user?.name || 'User'}
+                className="w-9 h-9"
+              />
+              <p className="text-sm font-medium hidden sm:block">
+                Hi, {user?.name}
+              </p>
+              <Button
+                size="sm"
+                color="danger"
+                variant="flat"
+                onClick={handleLogout}
+              >
                 Logout
               </Button>
             </div>
@@ -128,7 +106,6 @@ export default function Navbar() {
               <Link href="/auth/signin" className="text-sm text-default-600">
                 Sign In
               </Link>
-
               <Link href="/auth/signup">
                 <Button size="sm" className="bg-[#005A5B] text-white">
                   Sign Up
@@ -139,49 +116,33 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* MOBILE MENU */}
+      {/* MOBILE MENU: মোবাইলেও শুধু মেইন লিংকগুলো থাকবে */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-default-200 bg-background">
+        <div className="md:hidden border-t border-default-200 bg-background transition-all">
           <div className="p-4 space-y-3">
-            <Input className="w-64" placeholder="Search lawyers..." />
-
+            <Input className="w-full" placeholder="Search lawyers..." />
             {navLinks.map(link => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="block py-2"
+                className={`block py-2 text-base ${isActive(link.href) ? 'text-[#005A5B] font-bold' : 'text-default-600'}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {link.label}
               </Link>
             ))}
-
             {user && (
-              <>
-                <div className="border-t my-2 border-default-200" />
-                <p className="text-xs font-black uppercase tracking-wider text-default-400 mb-1">
-                  Dashboard Links ({currentUserRole})
-                </p>
-
-                {dashboardLinks[currentUserRole]?.map(link => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="block py-1.5 text-sm font-semibold text-default-600 hover:text-[#005A5B]"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-
-                <Button
-                  className="w-full mt-4"
-                  color="danger"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </Button>
-              </>
+              <Button
+                color="danger"
+                variant="flat"
+                className="w-full mt-2"
+                onClick={() => {
+                  handleLogout();
+                  setIsMenuOpen(false);
+                }}
+              >
+                Logout
+              </Button>
             )}
           </div>
         </div>
