@@ -1,13 +1,14 @@
 import React from 'react'
 import ManageLegalProfilePage from './ManageLegalProfilePage';
-import { getLoggedInClientCompany } from '@/lib/api/companies';
+import { getLawyerCompany, getLoggedInClientCompany } from '@/lib/api/companies';
+import { getUserSession } from '@/lib/core/session';
 
 const ManageprofilePage = async () => {
-  const company = await getLoggedInClientCompany();
-  console.log(company);
+  const user = await getUserSession();
+  const company = await getLawyerCompany(user?.id);
   return (
     <div>
-      <ManageLegalProfilePage company={company} />
+      <ManageLegalProfilePage lawyer={user} lawyerCompany={ company} />
     </div>
   )
 }

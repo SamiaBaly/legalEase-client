@@ -13,8 +13,16 @@ export const getHires = async () => {
 }
 
 
+export const getHiresByUser = async (userId) => { 
+  console.log("userId", userId);
+  return serverFetch(`/api/hires?userId=${userId}`)
+}
+
 export const getHiresByClient = async (clientId) => { 
   return serverFetch(`/api/hires?clientId=${clientId}`)
+}
+export const getHiresByLawyer = async (lawyerId) => { 
+  return serverFetch(`/api/hires?lawyerId=${lawyerId}`)
 }
 
 
@@ -23,6 +31,13 @@ export const getLoggedInHire = async () => {
   if (!user?.id) return [];
 
   return getHiresByClient(user.id);
+};
+
+export const getLoggedInHireLawyer = async () => {
+  const user = await getUserSession();
+  if (!user?.id) return [];
+
+  return getHiresByLawyer(user.id);
 };
 
 

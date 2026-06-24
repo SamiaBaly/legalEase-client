@@ -1,19 +1,9 @@
-import { getHiresByClient } from '@/lib/api/hire';
-import { getUserSession } from '@/lib/core/session';
-import React from 'react'
+import React from "react";
+import LawyerHiringHistory from "./LawyerHiringHistory";
+import { getLoggedInHire} from "@/lib/api/hire";
 
-const LawyerHiringHistory = async() => {
-  const user = await getUserSession()
-  console.log("user", user);
-  const hires = await getHiresByClient(user.id)
-  console.log(hires, "hires");
-  return (
-    <div>
-      <h1>LawyerHiringHistory: { hires.length}</h1>
-    </div>
-  )
+export default async function LawyerHiringHistoryPage() {
+  const initialHires = await getLoggedInHire();
+
+  return <LawyerHiringHistory initialHires={initialHires} />;
 }
-
-export default LawyerHiringHistory
-
-

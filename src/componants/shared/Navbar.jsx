@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Button, Input, Avatar } from '@heroui/react';
+import { Button, Avatar } from '@heroui/react';
 import { ThemeSwitch } from '../ThemeSwitch';
 import { signOut, useSession } from '@/lib/auth-client';
+import { BsList } from 'react-icons/bs';
+import { FaHome, FaUserTie } from 'react-icons/fa6';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,102 +16,132 @@ export default function Navbar() {
   const { data: session } = useSession();
   const user = session?.user;
 
-
   const navLinks = [
     { label: 'Home', href: '/' },
     { label: 'Browse Lawyers', href: '/lawyers' },
   ];
 
   const dashboardLinks = {
-    client: "/dashboard/client",
+    client: '/dashboard/client',
     lawyer: '/dashboard/lawyer',
-    admin:'/dashboard/admin'
-  }
+    admin: '/dashboard/admin',
+  };
 
- 
+  const dashboardHref = dashboardLinks[user?.role || 'client'];
+
   if (user?.email) {
     navLinks.push({
       label: 'Dashboard',
-      href: dashboardLinks[user?.role || 'client'],
+      href: dashboardHref,
     });
   }
 
-  const isActive = href => pathname === href;
+  const isActive = (href) => pathname === href;
 
   const handleLogout = async () => {
     await signOut();
   };
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b border-default-200 bg-background/70 backdrop-blur-lg">
-      <header className="flex h-16 items-center justify-between px-6 max-w-7xl mx-auto">
-        {/* LEFT: Logo & Mobile Toggle */}
-        <div className="flex items-center gap-4">
+    <nav className="sticky top-0 z-40 w-full border-b border-white/10 bg-[#050816]/80 backdrop-blur-xl">
+      <header className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+        <div className="flex items-center gap-3">
           <button
-            className="md:hidden text-default-600 text-xl"
+            className="rounded-xl p-2 text-white/80 transition hover:bg-white/10 md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle menu"
           >
-            {isMenuOpen ? '✕' : '☰'}
+            <BsList className="text-2xl" />
           </button>
+
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/asset/logo.png"
               alt="logo"
-              width={150}
-              height={50}
+              width={140}
+              height={44}
               priority
             />
           </Link>
         </div>
 
-        {/* CENTER: Desktop Navigation Links */}
-        <ul className="hidden md:flex items-center gap-6">
-          {navLinks.map(link => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className={`text-sm font-medium ${
-                  isActive(link.href)
-                    ? 'text-[#005A5B] font-bold'
-                    : 'text-default-600 hover:text-[#005A5B]'
-                }`}
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
+        <ul className="hidden items-center gap-2 md:flex">
+          {navLinks.map((link) => {
+            const active = isActive(link.href);
+
+            if (link.label === 'Dashboard') {
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className={[
+                      'inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium transition-all',
+                      active
+                        ? 'bg-white/10 text-white shadow-md ring-1 ring-white/10'
+                        : 'text-zinc-300 hover:bg-white/5 hover:text-white',
+                    ].join(' ')}
+                  >
+                    <FaUserTie className="text-sm" />
+                    <span className="hidden lg:inline">Dashboard</span>
+                  </Link>
+                </li>
+              );
+            }
+
+            return (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className={[
+                    'rounded-2xl px-4 py-2 text-sm font-medium transition-all',
+                    active
+                      ? 'bg-white/10 text-white shadow-md ring-1 ring-white/10'
+                      : 'text-zinc-300 hover:bg-white/5 hover:text-white',
+                  ].join(' ')}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
-        {/* RIGHT: Search, Theme, Auth Profile */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:block">
-            <Input className="w-64" placeholder="Search lawyers..." />
-          </div>
-
           <ThemeSwitch />
 
           {user ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Avatar
                 src={user?.image}
                 name={user?.name || 'User'}
-                className="w-9 h-9"
+                className="h-9 w-9 ring-1 ring-white/10"
               />
-              <p className="text-sm font-medium hidden sm:block">
-                Hi, {user?.name}
-              </p>
+
+              <div className="hidden sm:block">
+                <p className="text-sm font-medium text-white">
+                  Hi, {user?.name || 'User'}
+                </p>
+                <p className="text-xs text-zinc-400">
+                  {user?.role || 'client'}
+                </p>
+              </div>
+
               <Button
                 size="sm"
                 color="danger"
                 variant="flat"
                 onClick={handleLogout}
+                className="hidden sm:inline-flex"
               >
                 Logout
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <Link href="/auth/signin" className="text-sm text-default-600">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                href="/auth/signin"
+                className="hidden text-sm text-zinc-300 transition hover:text-white sm:inline"
+              >
                 Sign In
               </Link>
               <Link href="/auth/signup">
@@ -122,28 +154,39 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* MOBILE MENU: মোবাইলেও শুধু মেইন লিংকগুলো থাকবে */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-default-200 bg-background transition-all">
-          <div className="p-4 space-y-3">
-            <Input className="w-full" placeholder="Search lawyers..." />
-            {navLinks.map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`block py-2 text-base ${isActive(link.href) ? 'text-[#005A5B] font-bold' : 'text-default-600'}`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
+        <div className="border-t border-white/10 bg-[#050816] md:hidden">
+          <div className="space-y-2 px-4 py-4">
+            {navLinks.map((link) => {
+              if (link.label === 'Dashboard') return null;
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={[
+                    'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-all',
+                    isActive(link.href)
+                      ? 'bg-white/10 text-white shadow-md ring-1 ring-white/10'
+                      : 'text-zinc-300 hover:bg-white/5 hover:text-white',
+                  ].join(' ')}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {link.label === 'Home' ? (
+                    <FaHome className="text-base" />
+                  ) : null}
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+
             {user && (
               <Button
                 color="danger"
                 variant="flat"
-                className="w-full mt-2"
-                onClick={() => {
-                  handleLogout();
+                className="mt-2 w-full"
+                onClick={async () => {
+                  await handleLogout();
                   setIsMenuOpen(false);
                 }}
               >

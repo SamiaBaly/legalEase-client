@@ -3,182 +3,136 @@
 import React, { useState } from 'react';
 import { Button, Card } from '@heroui/react';
 import { toast } from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
-import {
-  FaUser,
-  FaDollarSign,
-  FaStethoscope,
-  FaCloudUploadAlt,
-  FaSave,
-  FaClock,
-  FaArrowRight,
-  FaCheckCircle,
-} from 'react-icons/fa';
+import { FaCloudUploadAlt, FaArrowLeft } from 'react-icons/fa';
 import { createJobs } from '@/lib/acitons/jobs';
 
-export default function ManageLegalProfilePage({ company }) {
-  const router = useRouter();
+export default function ManageLegalProfilePage({ lawyer, lawyerCompany }) {
+  const [company, setCompany] = useState(lawyerCompany);
   const [isEditing, setIsEditing] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(lawyerCompany?.image || '');
 
-  const [inputs, setInputs] = useState({
-    name: '',
-    specialization: '',
-    fee: '',
-    bio: '',
-    experience: '',
-    phone: '',
-    location: '',
-    availability: 'available',
-  });
-
-  const [imageFile, setImageFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const profileStatus = company?.status || 'pending';
-  const isPending = profileStatus === 'pending';
-
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    setInputs(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleFormSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      name: company?.name || lawyer?.name,
+      specialization: formData.get("specialization"),
+      fee: Number(formData.get("fee")),
+      bio: formData.get("bio"),
+      location: formData.get("location"),
+      phone: formData.get("phone"),
+      experience: formData.get("experience"),
+      image: logoUrl,
+      lawyerId: lawyer?.id,
+      status:'pending'
+    };
 
-    const imgbbApiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
-    if (!imgbbApiKey) {
-      return toast.error('ImgBB API key missing!');
-    }
-
-    if (!imageFile) {
-      return toast.error('Please upload a profile photo!');
-    }
-
-    setLoading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('image', imageFile);
-
-      const imgResponse = await fetch(
-        `https://api.imgbb.com/1/upload?key=${imgbbApiKey}`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-
-      const imgData = await imgResponse.json();
-      if (!imgData.success) {
-        throw new Error('Image upload failed');
-      }
-
-      const payload = {
-        ...inputs,
-        fee: Number(inputs.fee),
-        experience: Number(inputs.experience),
-        image: imgData.data.url,
-
-        companyId: company?._id,
-        companyName: company?.name,
-        companyLogo: company?.image || company?.logo,
-
-        status: 'pending',
-        totalHires: 0,
-        createdAt: new Date(),
-      };
-
-      const res = await createJobs(payload);
-
-      if (res?.insertedId || res?.success) {
-        toast.success('Profile created successfully! Waiting for admin approval.');
-        setIsEditing(false);
-        router.push('/dashboard/lawyer/manage-legal-profile'); // landing page route
-      } else {
-        throw new Error(res?.error || 'Database operation failed.');
-      }
-    } catch (error) {
-      toast.error(error.message || 'Something went wrong.');
-    } finally {
-      setLoading(false);
+    const res = await createJobs(data);
+    if (res?.success || res?.insertedId) {
+      toast.success("Profile saved successfully!");
+      setCompany(data);
+      setIsEditing(false);
     }
   };
+
+  const inputClass = "w-full h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none focus:border-cyan-500 transition";
 
   return (
-    <div className="min-h-screen bg-[#05060a] text-white">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        {!isEditing ? (
-          <div className="space-y-6">
-            <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/5 p-8 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-10">
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-transparent" />
-              <div className="relative z-10">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2 text-xs font-semibold text-amber-300">
-                  <FaClock />
-                  Pending Approval
-                </div>
+    <div className="min-h-screen bg-[#05060a] p-4 md:p-8 text-white">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center gap-4 mb-8">
+          {isEditing && (
+            <button onClick={() => setIsEditing(false)} className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10">
+              <FaArrowLeft />
+            </button>
+          )}
+          <h2 className="text-2xl font-bold">{isEditing ? "Update Profile" : "Legal Profile"}</h2>
+        </div>
 
-                <h1 className="max-w-3xl text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
-                  Manage your legal profile and services from one clean dashboard.
-                </h1>
+        {isEditing ? (
+          <Card className="bg-[#121212] border border-white/10 p-8 rounded-3xl">
+            <form onSubmit={handleSubmit} className="space-y-4">
 
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300">
-                  Create your consultant profile, upload your photo, and submit it for admin review.
-                  Once approved, your profile will be visible to clients.
-                </p>
-
-                <div className="mt-8 flex flex-wrap items-center gap-4">
-                  <Button
-                    onClick={() => setIsEditing(true)}
-                    isDisabled={isPending}
-                    startContent={<FaArrowRight size={14} />}
-                    className="h-12 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isPending ? 'Waiting for approval' : 'Update Profile'}
-                  </Button>
-
-                  <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-300">
-                    <FaCheckCircle className="text-emerald-400" />
-                    Status: <span className="font-semibold text-amber-300 capitalize">{profileStatus}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/5 text-zinc-300 transition hover:bg-white/10 hover:text-white"
-              >
-                <span className="text-lg">←</span>
-              </button>
-              <div>
-                <h2 className="text-xl font-black tracking-wide text-white">
-                  Manage Legal Profile & Services
-                </h2>
-                <p className="text-xs text-zinc-400">
-                  Set up what legal consultancy you offer.
-                </p>
-              </div>
-            </div>
-
-            <Card className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl">
-              <form onSubmit={handleFormSubmit} className="space-y-5">
-                {/* form fields same as before */}
-
-                <Button
-                  type="submit"
-                  isLoading={loading}
-                  startContent={!loading && <FaSave size={16} />}
-                  className="h-12 w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 font-black text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-95"
+              <div className="flex justify-center mb-4">
+                <label
+                  htmlFor="logo-upload"
+                  className="w-32 h-32 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-full cursor-pointer overflow-hidden hover:bg-white/5"
                 >
-                  Save Profile & Services
-                </Button>
-              </form>
-            </Card>
-          </div>
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <>
+                      <FaCloudUploadAlt className="text-3xl text-zinc-400" />
+                      <span className="text-xs mt-2">Upload Image</span>
+                    </>
+                  )}
+                </label>
+
+                <input
+                  id="logo-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    const formData = new FormData();
+                    formData.append("image", file);
+
+                    try {
+                      const res = await fetch(
+                        `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`,
+                        {
+                          method: "POST",
+                          body: formData,
+                        }
+                      );
+
+                      const data = await res.json();
+
+                      if (data.success) {
+                        setLogoUrl(data.data.url);
+                        toast.success("Image uploaded");
+                      }
+                    } catch (error) {
+                      toast.error("Upload failed");
+                    }
+                  }}
+                />
+              </div>
+
+              <input name="companyName" defaultValue={company?.name || lawyer?.name} className={`${inputClass} opacity-60 cursor-not-allowed`} readOnly />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input name="specialization" defaultValue={company?.specialization} placeholder="Specialization" className={inputClass} required />
+                <input name="fee" type="number" defaultValue={company?.fee} placeholder="Consultation Fee" className={inputClass} required />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input name="phone" defaultValue={company?.phone} placeholder="Phone Number" className={inputClass} required />
+                <input name="location" defaultValue={company?.location} placeholder="Location" className={inputClass} required />
+              </div>
+
+              <input name="experience" type="number" defaultValue={company?.experience} placeholder="Years of Experience" className={inputClass} required />
+              <textarea name="bio" rows={3} defaultValue={company?.bio} placeholder="Professional Bio" className={`${inputClass} h-auto p-4`} required />
+
+              <Button type="submit" className="w-full h-12 rounded-xl bg-cyan-600 font-bold hover:bg-cyan-700">Save Profile</Button>
+            </form>
+          </Card>
+        ) : (
+          <Card className="bg-[#121212] border border-white/10 p-12 rounded-[32px] text-center max-w-sm mx-auto shadow-2xl">
+            <div className="flex flex-col items-center justify-center">
+              <h3 className="text-xl font-bold text-white mb-6">No registered Profile</h3>
+              <Button onClick={() => setIsEditing(true)} className="w-full bg-cyan-600 text-white font-bold h-12 rounded-2xl hover:bg-cyan-700 transition">
+                Update Profile
+              </Button>
+            </div>
+          </Card>
         )}
       </div>
     </div>
