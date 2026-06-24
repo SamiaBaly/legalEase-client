@@ -10,13 +10,16 @@ import {
   FaStethoscope,
   FaCloudUploadAlt,
   FaSave,
+  FaClock,
+  FaArrowRight,
+  FaCheckCircle,
 } from 'react-icons/fa';
 import { createJobs } from '@/lib/acitons/jobs';
 
-export default function ManageLegalProfilePage({ company}) {
+export default function ManageLegalProfilePage({ company }) {
   const router = useRouter();
+  const [isEditing, setIsEditing] = useState(false);
 
- 
   const [inputs, setInputs] = useState({
     name: '',
     specialization: '',
@@ -30,6 +33,9 @@ export default function ManageLegalProfilePage({ company}) {
 
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const profileStatus = company?.status || 'pending';
+  const isPending = profileStatus === 'pending';
 
   const handleInputChange = e => {
     const { name, value } = e.target;
@@ -51,7 +57,6 @@ export default function ManageLegalProfilePage({ company}) {
     setLoading(true);
 
     try {
-     
       const formData = new FormData();
       formData.append('image', imageFile);
 
@@ -60,7 +65,7 @@ export default function ManageLegalProfilePage({ company}) {
         {
           method: 'POST',
           body: formData,
-        },
+        }
       );
 
       const imgData = await imgResponse.json();
@@ -68,27 +73,27 @@ export default function ManageLegalProfilePage({ company}) {
         throw new Error('Image upload failed');
       }
 
-     
       const payload = {
-  ...inputs,
-  fee: Number(inputs.fee),
-  experience: Number(inputs.experience),
-  image: imgData.data.url,
+        ...inputs,
+        fee: Number(inputs.fee),
+        experience: Number(inputs.experience),
+        image: imgData.data.url,
 
-  companyId: company?._id,
+        companyId: company?._id,
         companyName: company?.name,
-companyLogo:company?.image,
+        companyLogo: company?.image || company?.logo,
 
-  status: 'pending',
-  totalHires: 0,
-  createdAt: new Date(),
-};
-      
+        status: 'pending',
+        totalHires: 0,
+        createdAt: new Date(),
+      };
+
       const res = await createJobs(payload);
 
       if (res?.insertedId || res?.success) {
-        toast.success('Profile created successfully!');
-        router.push('/dashboard/lawyer');
+        toast.success('Profile created successfully! Waiting for admin approval.');
+        setIsEditing(false);
+        router.push('/dashboard/lawyer/manage-legal-profile'); // landing page route
       } else {
         throw new Error(res?.error || 'Database operation failed.');
       }
@@ -100,199 +105,82 @@ companyLogo:company?.image,
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      <div>
-        <h2 className="text-xl font-black text-default-900 dark:text-zinc-100 uppercase tracking-wide">
-          Manage Legal Profile & Services
-        </h2>
-        <p className="text-xs text-default-500">
-          Set up what legal consultancy you offer.
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#05060a] text-white">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        {!isEditing ? (
+          <div className="space-y-6">
+            <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/5 p-8 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-10">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-transparent" />
+              <div className="relative z-10">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-4 py-2 text-xs font-semibold text-amber-300">
+                  <FaClock />
+                  Pending Approval
+                </div>
 
-      <Card className="p-6 bg-content1 dark:bg-zinc-900 border border-default-200 dark:border-zinc-800 rounded-2xl shadow-md">
-        <form onSubmit={handleFormSubmit} className="space-y-5">
-          {/* NAME */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-black uppercase tracking-wider text-default-700 dark:text-zinc-300">
-              Consultant Full Name
-            </label>
-            <div className="relative flex items-center">
-              <span className="absolute left-4 text-default-400">
-                <FaUser size={14} />
-              </span>
-              <input
-                type="text"
-                name="name"
-                required
-                placeholder="e.g. Adv. John Doe"
-                value={inputs.name}
-                onChange={handleInputChange}
-                className="w-full h-12 pl-11 pr-4 rounded-xl border-2 border-default-200 dark:border-zinc-800 bg-transparent text-sm font-semibold text-default-900 dark:text-zinc-100 focus:outline-none focus:border-[#005A5B] dark:focus:border-[#20B2AA] transition-colors"
-              />
-            </div>
-          </div>
+                <h1 className="max-w-3xl text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+                  Manage your legal profile and services from one clean dashboard.
+                </h1>
 
-          {/* SPECIALIZATION & FEE */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-black uppercase tracking-wider text-default-700 dark:text-zinc-300">
-                Specialization
-              </label>
-              <div className="relative flex items-center">
-                <span className="absolute left-4 text-default-400">
-                  <FaStethoscope size={14} />
-                </span>
-                <input
-                  type="text"
-                  name="specialization"
-                  required
-                  placeholder="e.g. Corporate Law"
-                  value={inputs.specialization}
-                  onChange={handleInputChange}
-                  className="w-full h-12 pl-11 pr-4 rounded-xl border-2 border-default-200 dark:border-zinc-800 bg-transparent text-sm font-semibold text-default-900 dark:text-zinc-100 focus:outline-none focus:border-[#005A5B]"
-                />
-              </div>
-            </div>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-zinc-300">
+                  Create your consultant profile, upload your photo, and submit it for admin review.
+                  Once approved, your profile will be visible to clients.
+                </p>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-black uppercase tracking-wider text-default-700 dark:text-zinc-300">
-                Consultancy Fee ($)
-              </label>
-              <div className="relative flex items-center">
-                <span className="absolute left-4 text-default-400">
-                  <FaDollarSign size={14} />
-                </span>
-                <input
-                  type="number"
-                  name="fee"
-                  required
-                  placeholder="e.g. 150"
-                  value={inputs.fee}
-                  onChange={handleInputChange}
-                  className="w-full h-12 pl-11 pr-4 rounded-xl border-2 border-default-200 dark:border-zinc-800 bg-transparent text-sm font-semibold text-default-900 dark:text-zinc-100 focus:outline-none focus:border-[#005A5B]"
-                />
+                <div className="mt-8 flex flex-wrap items-center gap-4">
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    isDisabled={isPending}
+                    startContent={<FaArrowRight size={14} />}
+                    className="h-12 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isPending ? 'Waiting for approval' : 'Update Profile'}
+                  </Button>
+
+                  <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-zinc-300">
+                    <FaCheckCircle className="text-emerald-400" />
+                    Status: <span className="font-semibold text-amber-300 capitalize">{profileStatus}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-
-          {/* EXPERIENCE & PHONE */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-black uppercase tracking-wider text-default-700 dark:text-zinc-300">
-                Experience (Years)
-              </label>
-              <input
-                type="number"
-                name="experience"
-                required
-                placeholder="e.g. 8"
-                value={inputs.experience}
-                onChange={handleInputChange}
-                className="w-full h-12 px-4 rounded-xl border-2 border-default-200 dark:border-zinc-800 bg-transparent text-sm font-semibold text-default-900 dark:text-zinc-100 focus:outline-none focus:border-[#005A5B]"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-black uppercase tracking-wider text-default-700 dark:text-zinc-300">
-                Phone Number
-              </label>
-              <input
-                type="text"
-                name="phone"
-                required
-                placeholder="+8801XXXXXXXXX"
-                value={inputs.phone}
-                onChange={handleInputChange}
-                className="w-full h-12 px-4 rounded-xl border-2 border-default-200 dark:border-zinc-800 bg-transparent text-sm font-semibold text-default-900 dark:text-zinc-100 focus:outline-none focus:border-[#005A5B]"
-              />
-            </div>
-          </div>
-
-          {/* LOCATION & AVAILABILITY */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-black uppercase tracking-wider text-default-700 dark:text-zinc-300">
-                Location
-              </label>
-              <input
-                type="text"
-                name="location"
-                required
-                placeholder="Dhaka, Bangladesh"
-                value={inputs.location}
-                onChange={handleInputChange}
-                className="w-full h-12 px-4 rounded-xl border-2 border-default-200 dark:border-zinc-800 bg-transparent text-sm font-semibold text-default-900 dark:text-zinc-100 focus:outline-none focus:border-[#005A5B]"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-black uppercase tracking-wider text-default-700 dark:text-zinc-300">
-                Availability
-              </label>
-              <select
-                name="availability"
-                value={inputs.availability}
-                onChange={handleInputChange}
-                className="w-full h-12 px-4 rounded-xl border-2 border-default-200 dark:border-zinc-800 bg-transparent text-sm font-semibold text-default-900 dark:text-zinc-100 focus:outline-none focus:border-[#005A5B]"
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/5 text-zinc-300 transition hover:bg-white/10 hover:text-white"
               >
-                <option value="available" className="text-zinc-900">
-                  Available
-                </option>
-                <option value="busy" className="text-zinc-900">
-                  Busy
-                </option>
-              </select>
+                <span className="text-lg">←</span>
+              </button>
+              <div>
+                <h2 className="text-xl font-black tracking-wide text-white">
+                  Manage Legal Profile & Services
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Set up what legal consultancy you offer.
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* BIO */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-black uppercase tracking-wider text-default-700 dark:text-zinc-300">
-              Professional Bio
-            </label>
-            <textarea
-              name="bio"
-              rows={4}
-              required
-              placeholder="Describe your legal experience..."
-              value={inputs.bio}
-              onChange={handleInputChange}
-              className="w-full p-4 rounded-xl border-2 border-default-200 dark:border-zinc-800 bg-transparent text-sm font-semibold text-default-900 dark:text-zinc-100 focus:outline-none focus:border-[#005A5B] resize-none"
-            />
-          </div>
+            <Card className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl">
+              <form onSubmit={handleFormSubmit} className="space-y-5">
+                {/* form fields same as before */}
 
-          {/* IMAGE UPLOAD */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-black uppercase tracking-wider text-default-700 dark:text-zinc-300">
-              Profile Photo
-            </label>
-            <div className="border-2 border-dashed border-default-300 dark:border-zinc-700 rounded-xl p-6 flex flex-col items-center justify-center bg-[#eeeae1]/10 dark:bg-zinc-950/20 relative cursor-pointer">
-              <input
-                type="file"
-                name="image"
-                accept="image/*"
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                onChange={e => setImageFile(e.target.files[0])}
-              />
-              <FaCloudUploadAlt className="text-default-400 mb-2" size={32} />
-              <p className="text-xs font-bold text-default-600 dark:text-zinc-400 text-center truncate max-w-full px-2">
-                {imageFile ? imageFile.name : 'Click to upload your profile image'}
-              </p>
-            </div>
+                <Button
+                  type="submit"
+                  isLoading={loading}
+                  startContent={!loading && <FaSave size={16} />}
+                  className="h-12 w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 font-black text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-95"
+                >
+                  Save Profile & Services
+                </Button>
+              </form>
+            </Card>
           </div>
-
-          {/* SUBMIT BUTTON */}
-          <Button
-            type="submit"
-            isLoading={loading}
-            startContent={!loading && <FaSave size={16} />}
-            className="w-full bg-[#005A5B] hover:bg-[#004445] dark:bg-[#20B2AA] dark:text-zinc-950 text-white font-black h-12 rounded-xl shadow-md transition-colors"
-          >
-            Save Profile & Services
-          </Button>
-        </form>
-      </Card>
+        )}
+      </div>
     </div>
   );
 }

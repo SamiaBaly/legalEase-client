@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+
 import { Button } from '@heroui/react';
 import { FaHome, FaArrowLeft } from 'react-icons/fa';
+import Link from 'next/link';
 
 const NotFoundPage = () => {
   return (
@@ -37,24 +38,23 @@ const NotFoundPage = () => {
           {/* ACTION BUTTONS */}
           <div className="flex flex-col gap-3 w-full">
             {/* GO TO HOME BUTTON */}
-            <Button
-              as={Link}
-              href="/"
-              startContent={<FaHome size={16} />}
-              className="w-full bg-[#005A5B] hover:bg-[#004445] dark:bg-[#20B2AA] dark:hover:bg-[#008B8B] dark:text-zinc-950 text-white font-bold h-11 rounded-xl transition-colors shadow-md"
-            >
-              Back to Home
-            </Button>
+            <Link
+  href="/"
+  className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#005A5B] px-4 py-3 text-white"
+>
+  <FaHome size={16} />
+  Go Home
+</Link>
 
             {/* GO BACK BUTTON */}
-            <Button
-              variant="bordered"
-              onClick={() => window.history.back()}
-              startContent={<FaArrowLeft size={14} />}
-              className="w-full border-2 border-default-200 dark:border-zinc-700 bg-transparent text-default-700 dark:text-zinc-300 font-bold h-11 rounded-xl hover:bg-[#eeeae1]/40 dark:hover:bg-zinc-800/50 transition-colors"
+            <Link
+            href={"/"}
+              
+             
+              className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#091010] px-4 py-3 text-white"
             >
               Go Back
-            </Button>
+            </Link>
           </div>
         </div>
       </div>

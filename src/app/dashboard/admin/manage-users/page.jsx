@@ -1,144 +1,229 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@heroui/react';
 import { toast } from 'react-hot-toast';
-import { FaUser, FaEnvelope, FaTrash } from 'react-icons/fa';
+import {
+  FaUser,
+  FaEnvelope,
+  FaTrash,
+  FaSpinner,
+  FaUsers,
+  FaUserShield,
+} from 'react-icons/fa';
+import { getHires } from '@/lib/api/hire';
 
 export default function AdminManageUsersPage() {
-  // ডামি ইউজার ডাটা লিস্ট
-  const [users, setUsers] = useState([
-    { id: 1, name: 'Asif Rahman', email: 'asif@gmail.com', role: 'client' },
-    {
-      id: 2,
-      name: 'Barrister Rafiq',
-      email: 'rafiq@legal.com',
-      role: 'lawyer',
-    },
-    { id: 3, name: 'Admin Shuvo', email: 'shuvo@admin.com', role: 'admin' },
-    { id: 4, name: 'Mitu Islam', email: 'mitu@gmail.com', role: 'client' },
-  ]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionId, setActionId] = useState(null);
 
-  // রোল চেঞ্জ করার হ্যান্ডলার
-  const handleRoleChange = (id, newRole) => {
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        const data = await getHires();
+        setUsers(Array.isArray(data) ? data : data?.users || []);
+      } catch (error) {
+        toast.error(error?.message || 'Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
+
+  const handleRoleChange = async (id, newRole) => {
     if (!newRole) return;
-    setUsers(prev =>
-      prev.map(user => (user.id === id ? { ...user, role: newRole } : user)),
-    );
-    toast.success(`User role updated to ${newRole} successfully!`);
+
+    try {
+      setActionId(id);
+      setUsers(prev =>
+        prev.map(user => (user.id === id ? { ...user, role: newRole } : user)),
+      );
+      toast.success(`User role updated to ${newRole} successfully!`);
+    } catch (error) {
+      toast.error(error?.message || 'Failed to update role');
+    } finally {
+      setActionId(null);
+    }
   };
 
-  // ইউজার ডিলিট করার হ্যান্ডলার
   const handleDeleteUser = (id, name) => {
     const confirmDelete = window.confirm(
       `Are you sure you want to delete ${name}?`,
     );
+
     if (confirmDelete) {
       setUsers(prev => prev.filter(user => user.id !== id));
       toast.error(`${name} has been removed from the platform.`);
     }
   };
 
+  const getRoleStyle = role => {
+    if (role === 'admin') {
+      return 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/40';
+    }
+    if (role === 'lawyer') {
+      return 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/30 dark:text-cyan-300 dark:border-cyan-900/40';
+    }
+    return 'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700';
+  };
+
   return (
-    <div className="max-w-6xl mx-auto space-y-4">
-      <div>
-        <h2 className="text-xl font-black text-default-900 dark:text-zinc-100 uppercase tracking-wide">
-          Manage System Users
-        </h2>
-        <p className="text-xs text-default-500">
-          Overview of registered accounts, role modification, and access
-          revocation.
-        </p>
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="rounded-[28px] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-6 text-white shadow-2xl shadow-black/20">
+        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold tracking-[0.2em] text-white/80">
+              <FaUserShield />
+              ADMIN CONTROL PANEL
+            </div>
+
+            <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
+              Manage System Users
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-white/70">
+              View users, change roles, and remove accounts from the platform.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/50">
+                Total Users
+              </p>
+              <p className="mt-1 text-2xl font-black">{users.length}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-white/50">
+                System Access
+              </p>
+              <p className="mt-1 text-2xl font-black">Active</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="w-full overflow-x-auto rounded-xl border border-default-200 dark:border-zinc-800 bg-content1 dark:bg-zinc-900 shadow-sm">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-default-200 dark:border-zinc-800 bg-default-50 dark:bg-zinc-950/40 text-[11px] font-black uppercase tracking-wider text-default-500">
-              <th className="p-4">Name</th>
-              <th className="p-4">Email</th>
-              <th className="p-4">Current Role</th>
-              <th className="p-4">Change Role</th>
-              <th className="p-4 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-default-100 dark:divide-zinc-800/60 text-sm font-medium">
-            {users.map(user => (
-              <tr
-                key={user.id}
-                className="hover:bg-default-50/50 dark:hover:bg-zinc-800/20 transition-colors"
-              >
-                <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <FaUser className="text-default-400" size={13} />
-                    <span className="font-bold text-default-800 dark:text-zinc-200">
-                      {user.name}
-                    </span>
-                  </div>
-                </td>
-                <td className="p-4 text-xs text-default-500">
-                  <div className="flex items-center gap-1.5">
-                    <FaEnvelope size={12} />
-                    {user.email}
-                  </div>
-                </td>
-                <td className="p-4">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-black uppercase rounded-md border ${
-                      user.role === 'admin'
-                        ? 'bg-danger-50 dark:bg-danger-950/30 text-danger border-danger-200'
-                        : user.role === 'lawyer'
-                          ? 'bg-[#005A5B]/10 dark:bg-[#20B2AA]/10 text-[#005A5B] dark:text-[#20B2AA] border-transparent'
-                          : 'bg-default-100 dark:bg-zinc-800 text-default-700 dark:text-zinc-300 border-transparent'
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                </td>
-                <td className="p-4 min-w-[140px]">
-                  {/* ✅ ফিক্সড করা কালার ক্লাসসমূহ */}
-                  <select
-                    value={user.role}
-                    onChange={e => handleRoleChange(user.id, e.target.value)}
-                    className="h-9 w-full px-2 rounded-lg border border-default-200 dark:border-zinc-800 bg-transparent text-xs font-bold text-default-800 dark:text-zinc-200 focus:outline-none focus:border-[#005A5B] dark:focus:border-[#20B2AA]"
-                  >
-                    {/* অপশনগুলোর ব্যাকগ্রাউন্ড থিম অনুযায়ী সেট করা হয়েছে */}
-                    <option
-                      value="client"
-                      className="bg-content1 dark:bg-zinc-900 text-default-800 dark:text-zinc-200"
-                    >
-                      Client
-                    </option>
-                    <option
-                      value="lawyer"
-                      className="bg-content1 dark:bg-zinc-900 text-default-800 dark:text-zinc-200"
-                    >
-                      Lawyer
-                    </option>
-                    <option
-                      value="admin"
-                      className="bg-content1 dark:bg-zinc-900 text-default-800 dark:text-zinc-200"
-                    >
-                      Admin
-                    </option>
-                  </select>
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center justify-center">
-                    <Button
-                      size="sm"
-                      isIconOnly
-                      onClick={() => handleDeleteUser(user.id, user.name)}
-                      className="bg-danger-50 hover:bg-danger-100 text-danger rounded-lg border border-danger-200 dark:bg-danger-950/20 dark:border-transparent"
-                    >
-                      <FaTrash size={12} />
-                    </Button>
-                  </div>
-                </td>
+      <div className="overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+          <div className="flex items-center gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300">
+              <FaUsers />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+                Registered Users
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Role management and account control
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse text-left">
+            <thead>
+              <tr className="bg-zinc-50 text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500 dark:bg-zinc-900/60 dark:text-zinc-400">
+                <th className="px-5 py-4">Name</th>
+                <th className="px-5 py-4">Email</th>
+                <th className="px-5 py-4">Current Role</th>
+                <th className="px-5 py-4">Change Role</th>
+                <th className="px-5 py-4 text-center">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-16 text-center">
+                    <div className="flex items-center justify-center gap-3 text-zinc-500 dark:text-zinc-400">
+                      <FaSpinner className="animate-spin" />
+                      Loading users...
+                    </div>
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-16 text-center">
+                    <div className="mx-auto max-w-sm rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 dark:border-zinc-700 dark:bg-zinc-900/40">
+                      <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                        No users found
+                      </p>
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        Users will appear here once loaded.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                users.map(user => (
+                  <tr
+                    key={user.id}
+                    className="transition-colors hover:bg-cyan-50/40 dark:hover:bg-white/5"
+                  >
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="grid h-10 w-10 place-items-center rounded-2xl bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                          <FaUser size={13} />
+                        </div>
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          {user.name}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-4 text-sm text-zinc-600 dark:text-zinc-400">
+                      <div className="flex items-center gap-2">
+                        <FaEnvelope size={12} />
+                        <span className="break-all">{user.email}</span>
+                      </div>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <span
+                        className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] ${getRoleStyle(
+                          user.role,
+                        )}`}
+                      >
+                        {user.role}
+                      </span>
+                    </td>
+
+                    <td className="px-5 py-4 min-w-[160px]">
+                      <select
+                        value={user.role}
+                        onChange={e => handleRoleChange(user.id, e.target.value)}
+                        disabled={actionId === user.id}
+                        className="h-10 w-full rounded-2xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-800 outline-none transition focus:border-cyan-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+                      >
+                        <option value="client">Client</option>
+                        <option value="lawyer">Lawyer</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+
+                    <td className="px-5 py-4">
+                      <div className="flex justify-center">
+                        <Button
+                          size="sm"
+                          isIconOnly
+                          isLoading={actionId === user.id}
+                          onClick={() => handleDeleteUser(user.id, user.name)}
+                          className="rounded-2xl border border-red-200 bg-red-50 text-red-600 shadow-sm transition hover:bg-red-100 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300"
+                        >
+                          <FaTrash size={12} />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

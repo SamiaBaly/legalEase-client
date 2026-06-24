@@ -1,72 +1,47 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button, Card } from '@heroui/react';
 import { toast } from 'react-hot-toast';
-import { 
-  FaUser, FaMapMarkerAlt, FaUserEdit, FaPlusCircle, 
-  FaAddressCard, FaCloudUploadAlt, FaSave, FaArrowLeft,
-  FaPhone, FaFileAlt,
-  FaEnvelope
+import {
+  FaUser,
+  FaMapMarkerAlt,
+  FaUserEdit,
+  FaPlusCircle,
+  FaAddressCard,
+  FaCloudUploadAlt,
+  FaSave,
+  FaArrowLeft,
+  FaPhone,
+  FaFileAlt,
+  FaEnvelope,
 } from 'react-icons/fa';
 import { createCompany } from '@/lib/acitons/companies';
 
-export default function DashboardProfilePage({ client, clientCompany}) {
+export default function DashboardProfilePage({ client, clientCompany }) {
   const [profile, setProfile] = useState(clientCompany);
-  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-
-
   const [inputs, setInputs] = useState({
-    name: '',
-    phone: '',
-    location: '',
-    bio: ''
+    name: clientCompany?.name || '',
+    phone: clientCompany?.phone || '',
+    location: clientCompany?.location || '',
+    bio: clientCompany?.bio || '',
   });
   const [imageFile, setImageFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-
-  useEffect(() => {
-    async function loadProfile() {
-      try {
-        const res = await fetch('/api/user/profile');
-        const data = await res.json();
-        
-        if (data && data.success && data.profile) {
-          setProfile(data.profile);
-        
-          setInputs({
-            name: data.profile.name || '',
-            phone: data.profile.phone || '',
-            location: data.profile.location || '',
-            bio: data.profile.bio || ''
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProfile();
-  }, []);
-
-
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
-    setInputs((prev) => ({ ...prev, [name]: value }));
+    setInputs(prev => ({ ...prev, [name]: value }));
   };
 
-  
-  const handleFormSubmit = async (e) => {
+  const handleFormSubmit = async e => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
       let finalImageUrl = profile?.image || '';
 
-    
       if (imageFile) {
         const imgbbApiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
         if (!imgbbApiKey) throw new Error('ImgBB API key missing!');
@@ -74,40 +49,44 @@ export default function DashboardProfilePage({ client, clientCompany}) {
         const formData = new FormData();
         formData.append('image', imageFile);
 
-        const imgResponse = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
-          method: 'POST',
-          body: formData,
-        });
+        const imgResponse = await fetch(
+          `https://api.imgbb.com/1/upload?key=${imgbbApiKey}`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
 
         const imgData = await imgResponse.json();
         if (!imgData.success) throw new Error('Image upload failed');
+
         finalImageUrl = imgData.data.url;
       }
 
-     
-     const payload = {
-  name: inputs.name,
-  phone: inputs.phone,
-  location: inputs.location,
-  bio: inputs.bio,
-  image: finalImageUrl,
+      const payload = {
+        name: inputs.name,
+        phone: inputs.phone,
+        location: inputs.location,
+        bio: inputs.bio,
+        image: finalImageUrl,
+        clientId: client.id,
+        email: client.email,
+        updatedAt: new Date().toISOString(),
+      };
 
-  clientId: client.id,
-  email: client.email,
-
-  updatedAt: new Date().toISOString(),
-};
-
-      
       const dbResult = await createCompany(payload);
-      
 
-      if (dbResult && (dbResult.success || dbResult.insertedId || dbResult.modifiedCount || dbResult._id)) {
-        toast.success(profile ? 'Profile updated successfully!' : 'Profile registered successfully!');
-        setProfile({
-          ...profile,
-          ...payload
-        });
+      if (
+        dbResult &&
+        (dbResult.success ||
+          dbResult.insertedId ||
+          dbResult.modifiedCount ||
+          dbResult._id)
+      ) {
+        toast.success(
+          profile ? 'Profile updated successfully!' : 'Profile registered successfully!'
+        );
+        setProfile({ ...profile, ...payload });
         setIsEditing(false);
         setImageFile(null);
       } else {
@@ -120,228 +99,289 @@ export default function DashboardProfilePage({ client, clientCompany}) {
     }
   };
 
-  if (loading) {
-    return <div className="text-center py-12 text-zinc-400 text-sm">Loading Profile...</div>;
-  }
+  const fieldClass =
+    'w-full h-12 rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-cyan-400/60 focus:bg-white/7 focus:ring-2 focus:ring-cyan-400/10';
+  const textareaClass =
+    'w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-cyan-400/60 focus:bg-white/7 focus:ring-2 focus:ring-cyan-400/10 resize-none';
 
   return (
-    <div className="max-w-xl mx-auto space-y-6 p-4">
-      
-      {isEditing && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <button 
-              type="button"
-              onClick={() => setIsEditing(false)}
-              className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-400 hover:text-zinc-200 transition-colors"
-            >
-              <FaArrowLeft size={14} />
-            </button>
+    <div className="min-h-screen bg-[#05060a] text-white">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 rounded-[28px] border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-2xl shadow-black/30 backdrop-blur-xl">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div>
-              <h2 className="text-xl font-black text-zinc-100 uppercase tracking-wide">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-semibold text-cyan-300">
+                <FaAddressCard />
+                Client Profile
+              </div>
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
+                Manage Your Company Profile
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+                Keep your company identity updated with a clean dashboard profile.
+              </p>
+            </div>
+
+            {!isEditing && (
+              <Button
+                onClick={() => setIsEditing(true)}
+                startContent={profile ? <FaUserEdit size={16} /> : <FaPlusCircle size={16} />}
+                className="h-12 rounded-2xl border border-cyan-400/20 bg-cyan-500/15 px-5 font-semibold text-cyan-200 shadow-lg shadow-cyan-500/10 transition hover:bg-cyan-500/20"
+              >
                 {profile ? 'Update Profile' : 'Register Profile'}
-              </h2>
-              <p className="text-xs text-default-500">Fill in your information below for database setup.</p>
+              </Button>
+            )}
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <p className="text-xs uppercase tracking-wider text-zinc-500">Name</p>
+              <p className="mt-2 truncate text-sm font-semibold text-white">
+                {profile?.name || 'Not set'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <p className="text-xs uppercase tracking-wider text-zinc-500">Location</p>
+              <p className="mt-2 truncate text-sm font-semibold text-white">
+                {profile?.location || 'Not set'}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <p className="text-xs uppercase tracking-wider text-zinc-500">Status</p>
+              <p className="mt-2 text-sm font-semibold text-emerald-400">
+                {profile ? 'Profile Ready' : 'Setup Pending'}
+              </p>
             </div>
           </div>
-
-          <Card className="p-6 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-md">
-            <form onSubmit={handleFormSubmit} className="space-y-5">
-              {/* কারেন্ট ইমেজের প্রিভিউ */}
-              {profile?.image && !imageFile && (
-                <div className="flex flex-col items-center justify-center pb-2">
-                  <img src={profile.image} alt="Avatar" className="w-20 h-20 rounded-full object-cover border border-zinc-700 shadow-md" />
-                </div>
-              )}
-
-              {/* FULL NAME */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase tracking-wider text-zinc-300">Full Name</label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-4 text-zinc-500"><FaUser size={14} /></span>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    placeholder="e.g. Selma Bush"
-                    value={inputs.name}
-                    onChange={handleInputChange}
-                    className="w-full h-12 pl-11 pr-4 rounded-xl border-2 border-zinc-800 bg-transparent text-sm font-semibold text-zinc-100 focus:outline-none focus:border-[#005A5B] transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* PHONE NUMBER */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase tracking-wider text-zinc-300">Phone Number</label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-4 text-zinc-500"><FaPhone size={14} /></span>
-                  <input
-                    type="text"
-                    name="phone"
-                    required
-                    placeholder="+1 (802) 845-9057"
-                    value={inputs.phone}
-                    onChange={handleInputChange}
-                    className="w-full h-12 pl-11 pr-4 rounded-xl border-2 border-zinc-800 bg-transparent text-sm font-semibold text-zinc-100 focus:outline-none focus:border-[#005A5B] transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* LOCATION */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase tracking-wider text-zinc-300">Location</label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-4 text-zinc-500"><FaMapMarkerAlt size={14} /></span>
-                  <input
-                    type="text"
-                    name="location"
-                    required
-                    placeholder="e.g. Dhaka, Bangladesh"
-                    value={inputs.location}
-                    onChange={handleInputChange}
-                    className="w-full h-12 pl-11 pr-4 rounded-xl border-2 border-zinc-800 bg-transparent text-sm font-semibold text-zinc-100 focus:outline-none focus:border-[#005A5B] transition-colors"
-                  />
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-zinc-400 text-xs font-semibold">
-  <div className="flex items-center gap-1">
-    <FaMapMarkerAlt className="text-zinc-500" size={12} />
-    <span>{profile.location || 'Location not set'}</span>
-  </div>
-
-  <div className="flex items-center gap-1">
-    <FaPhone className="text-zinc-500" size={12} />
-    <span>{profile.phone || 'Phone not set'}</span>
-  </div>
-
-  <div className="flex items-center gap-1">
-    <FaEnvelope className="text-zinc-500" size={12} />
-    <span>{client?.email}</span>
-  </div>
-</div>
-
-              {/* BIO */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase tracking-wider text-zinc-300">Bio Description</label>
-                <div className="relative flex items-start">
-                  <textarea
-                    name="bio"
-                    rows={4}
-                    required
-                    placeholder="Write a brief description about yourself..."
-                    value={inputs.bio}
-                    onChange={handleInputChange}
-                    className="w-full p-4 rounded-xl border-2 border-zinc-800 bg-transparent text-sm font-semibold text-zinc-100 focus:outline-none focus:border-[#005A5B] resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* IMAGE UPLOAD */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase tracking-wider text-zinc-300">Profile Picture</label>
-                <div className="border-2 border-dashed border-zinc-700 rounded-xl p-6 flex flex-col items-center justify-center bg-zinc-950/20 relative cursor-pointer">
-                  <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => setImageFile(e.target.files[0])} />
-                  <FaCloudUploadAlt className="text-default-400 mb-2" size={32} />
-                  <p className="text-xs font-bold text-zinc-400 text-center truncate max-w-full px-2">
-                    {imageFile ? imageFile.name : (profile ? 'Select new image to change' : 'Click to upload profile image')}
-                  </p>
-                </div>
-              </div>
-
-              {/* SUBMIT BUTTON */}
-              <Button type="submit" isLoading={submitting} startContent={!submitting && <FaSave size={16} />} className="w-full bg-[#005A5B] hover:bg-[#004445] text-white font-black h-12 rounded-xl transition-colors shadow-md">
-                Save to Database
-              </Button>
-            </form>
-          </Card>
         </div>
-      )}
 
-      {/* ----------------- ভিউ ২: কোনো প্রোফাইল রেজিস্টার্ড না থাকলে (Prompt View) ----------------- */}
-      {!profile && !isEditing && (
-        <Card className="p-8 text-center bg-zinc-900 border border-zinc-800 rounded-2xl shadow-xl space-y-4">
-          <div className="flex justify-center text-zinc-500">
-            <FaAddressCard size={48} />
-          </div>
-          <div className="space-y-1">
-            <h2 className="text-lg font-black text-zinc-100 uppercase tracking-wide">
-              No Client Profile Registered
-            </h2>
-            <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-              You haven't set up your profile details yet. Please register your profile to access all features.
-            </p>
-          </div>
-          <Button
-            onClick={() => setIsEditing(true)}
-            startContent={<FaPlusCircle size={16} />}
-            className="bg-[#005A5B] hover:bg-[#004445] text-white font-black px-6 h-12 rounded-xl transition-colors shadow-lg"
-          >
-            Register Profile
-          </Button>
-        </Card>
-      )}
+        {isEditing && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/5 text-zinc-300 transition hover:bg-white/10 hover:text-white"
+              >
+                <FaArrowLeft size={14} />
+              </button>
+              <div>
+                <h2 className="text-xl font-black tracking-wide">
+                  {profile ? 'Update Profile' : 'Register Profile'}
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Fill in your information below for database setup.
+                </p>
+              </div>
+            </div>
 
-      {/* ----------------- ভিউ ৩: প্রোফাইল রেজিস্টার্ড থাকলে (Details View) ----------------- */}
-      {profile && !isEditing && (
-        <div className="space-y-4">
-          <div>
-            <h1 className="text-xl font-black text-zinc-100 uppercase tracking-wide">Account Profile</h1>
-            <p className="text-xs text-default-500">Manage your profile dashboard details.</p>
-          </div>
+            <Card className="rounded-[28px] border border-white/10 bg-white/5 p-0 shadow-2xl shadow-black/30 backdrop-blur-xl">
+              <form onSubmit={handleFormSubmit} className="space-y-6 p-6 sm:p-8">
+                {profile?.image && !imageFile && (
+                  <div className="flex justify-center">
+                    <img
+                      src={profile.image}
+                      alt="Avatar"
+                      className="h-24 w-24 rounded-full border border-white/10 object-cover shadow-xl shadow-black/30"
+                    />
+                  </div>
+                )}
 
-          <Card className="p-6 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-md space-y-5">
-            {/* হেডার অ্যাভাটার ও নাম */}
-            <div className="flex flex-col sm:flex-row items-center gap-5 border-b border-zinc-800/60 pb-5">
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-300">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <FaUser className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
+                      <input
+                        type="text"
+                        name="name"
+                        required
+                        placeholder="e.g. Selma Bush"
+                        value={inputs.name}
+                        onChange={handleInputChange}
+                        className={`${fieldClass} pl-11`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-300">
+                      Phone Number
+                    </label>
+                    <div className="relative">
+                      <FaPhone className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
+                      <input
+                        type="text"
+                        name="phone"
+                        required
+                        placeholder="+1 (802) 845-9057"
+                        value={inputs.phone}
+                        onChange={handleInputChange}
+                        className={`${fieldClass} pl-11`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-300">
+                      Location
+                    </label>
+                    <div className="relative">
+                      <FaMapMarkerAlt className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
+                      <input
+                        type="text"
+                        name="location"
+                        required
+                        placeholder="e.g. Dhaka, Bangladesh"
+                        value={inputs.location}
+                        onChange={handleInputChange}
+                        className={`${fieldClass} pl-11`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-300">
+                      Email
+                    </label>
+                    <div className="relative">
+                      <FaEnvelope className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
+                      <input
+                        type="text"
+                        value={client?.email}
+                        disabled
+                        className={`${fieldClass} cursor-not-allowed pl-11 text-zinc-400 opacity-80`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-zinc-300">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <span className="flex items-center gap-2">
+                      <FaMapMarkerAlt className="text-zinc-500" size={12} />
+                      {profile?.location || 'Location not set'}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <FaPhone className="text-zinc-500" size={12} />
+                      {profile?.phone || 'Phone not set'}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <FaEnvelope className="text-zinc-500" size={12} />
+                      {client?.email}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-300">
+                    Bio Description
+                  </label>
+                  <div className="relative">
+                    <FaFileAlt className="pointer-events-none absolute left-4 top-4 text-zinc-500" size={13} />
+                    <textarea
+                      name="bio"
+                      rows={5}
+                      required
+                      placeholder="Write a brief description about yourself..."
+                      value={inputs.bio}
+                      onChange={handleInputChange}
+                      className={`${textareaClass} pl-11`}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-300">
+                    Profile Picture
+                  </label>
+                  <div className="group relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-center transition hover:bg-white/8">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                      onChange={e => setImageFile(e.target.files[0])}
+                    />
+                    <FaCloudUploadAlt className="mb-3 text-zinc-400 transition group-hover:text-cyan-300" size={34} />
+                    <p className="text-sm font-semibold text-zinc-300">
+                      {imageFile
+                        ? imageFile.name
+                        : profile
+                        ? 'Select a new image to replace the current one'
+                        : 'Click or drop an image here'}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      JPG, PNG, WEBP recommended
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  isLoading={submitting}
+                  startContent={!submitting && <FaSave size={16} />}
+                  className="h-12 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 font-bold text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-95"
+                >
+                  Save to Database
+                </Button>
+              </form>
+            </Card>
+          </div>
+        )}
+
+        {profile && !isEditing && (
+          <Card className="rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-8">
+            <div className="flex flex-col gap-6 border-b border-white/10 pb-6 sm:flex-row sm:items-center">
               {profile.image ? (
                 <img
                   src={profile.image}
                   alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-zinc-700 shadow-md"
+                  className="h-24 w-24 rounded-full border border-white/10 object-cover shadow-xl shadow-black/30"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 text-2xl font-bold">
+                <div className="grid h-24 w-24 place-items-center rounded-full border border-white/10 bg-white/5 text-3xl font-black text-zinc-400">
                   {profile.name ? profile.name[0] : 'U'}
                 </div>
               )}
-              <div className="text-center sm:text-left space-y-1.5">
-                <h3 className="text-lg font-black text-zinc-100">{profile.name || 'Anonymous User'}</h3>
-                
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-zinc-400 text-xs font-semibold">
-                  <div className="flex items-center gap-1">
+
+              <div className="min-w-0">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                  Profile Active
+                </div>
+                <h3 className="mt-3 text-2xl font-black tracking-tight">
+                  {profile.name || 'Anonymous User'}
+                </h3>
+                <div className="mt-3 flex flex-wrap gap-3 text-sm text-zinc-400">
+                  <span className="flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
                     <FaMapMarkerAlt className="text-zinc-500" size={12} />
-                    <span>{profile.location || 'Location not set'}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
+                    {profile.location || 'Location not set'}
+                  </span>
+                  <span className="flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
                     <FaPhone className="text-zinc-500" size={12} />
-                    <span>{profile.phone || 'Phone not set'}</span>
-                  </div>
+                    {profile.phone || 'Phone not set'}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* বায়ো ডেসক্রিপশন ডিসপ্লে */}
-            <div className="bg-zinc-950/30 p-4 rounded-xl border border-zinc-800/50 space-y-1">
-              <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
-                <FaFileAlt size={11} /> About / Bio
+            <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-5">
+              <h4 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                <FaFileAlt size={11} />
+                About / Bio
               </h4>
-              <p className="text-xs text-zinc-300 font-medium leading-relaxed">
+              <p className="text-sm leading-7 text-zinc-300">
                 {profile.bio || 'No bio description provided.'}
               </p>
             </div>
 
-            {/* আপডেট প্রোফাইল বাটন */}
-            <Button
-              onClick={() => setIsEditing(true)}
-              startContent={<FaUserEdit size={16} />}
-              className="w-full bg-[#005A5B] hover:bg-[#004445] text-white font-black h-12 rounded-xl shadow-md transition-colors"
-            >
-              Update Profile
-            </Button>
+            
           </Card>
-        </div>
-      )}
-
+        )}
+      </div>
     </div>
   );
 }

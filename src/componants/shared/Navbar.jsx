@@ -14,17 +14,23 @@ export default function Navbar() {
   const { data: session } = useSession();
   const user = session?.user;
 
-  // নেভবারের মেইন লিংকসমূহ
+
   const navLinks = [
     { label: 'Home', href: '/' },
     { label: 'Browse Lawyers', href: '/lawyers' },
   ];
 
-  // ইউজার লগইন থাকলে নেভবারে সরাসরি ড্যাশবোর্ড বাটন যোগ হবে
+  const dashboardLinks = {
+    client: "/dashboard/client",
+    lawyer: '/dashboard/lawyer',
+    admin:'/dashboard/admin'
+  }
+
+ 
   if (user?.email) {
     navLinks.push({
       label: 'Dashboard',
-      href: '/dashboard',
+      href: dashboardLinks[user?.role || 'client'],
     });
   }
 

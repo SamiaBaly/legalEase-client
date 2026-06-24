@@ -30,15 +30,15 @@ const SignUpPage = () => {
     const email = formData.get('email');
     const password = formData.get('password');
     const name = formData.get('fullName');
+    const plan = role === "client" ? 'free' : "lawyer_payment";
 
     // TRY...CATCH IMPLEMENTATION
     try {
       const { data, error } = await signUp.email({
-        email,
-        password,
-        name,
-       
-          role: role,
+       email: email,
+  password: password,
+  name: name,
+        role:role,
         
        
       });

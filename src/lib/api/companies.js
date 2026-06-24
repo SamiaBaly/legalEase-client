@@ -3,7 +3,7 @@ import { serverFetch } from "../core/sever";
 
 
 export const getClientCompany = async (clientId) => {
-  return serverFetch(`/api/my/companies?clientId=${clientId}`)
+  return await serverFetch(`/api/my/companies?clientId=${clientId}`)
 } 
 
 

@@ -1,3 +1,4 @@
+import { getUserSession } from '@/lib/core/session';
 import {
   Bars,
   Bell,
@@ -13,14 +14,62 @@ import { BsLayoutSidebar } from 'react-icons/bs';
 import { FaBriefcase, FaHistory } from 'react-icons/fa';
 import { FaPerson } from 'react-icons/fa6';
 
-export function DashboardSidebar() {
-  const navItems = [
-    { icon: House, href:"/dashboard/lawyer" , label: 'Home' },
-    { icon: FaBriefcase, href:"/dashboard/lawyer/jobs" , label: 'Jobs' },
-    { icon: FaPerson, href:"/dashboard/lawyer/manage-legal-profile" , label: 'Manage-Profile' },
-    { icon: FaHistory, href:"/dashboard/lawyer/hiring-history" , label: 'Hiring-History' },
-   
-  ];
+export async function DashboardSidebar() {
+  const user=await getUserSession()
+
+  const clientNavLinks = [
+    {
+      icon: House, href: "/dashboard/client", label: 'Home'
+    },
+    {
+      icon: FaPerson, href: "/dashboard/client/update-profile", label: 'Manage-Profile'
+    },
+    {
+      icon: FaPerson, href: "/dashboard/client/comments", label: 'Comments-history'
+    },
+    {
+      icon: FaHistory, href: "/dashboard/client/hiring-history", label: 'Hiring-History'
+    }
+  ]
+  const lawyerNavLinks = [
+    {
+      icon: House, href: "/dashboard/lawyer", label: 'Home'
+    },
+    {
+      icon: FaBriefcase, href: "/dashboard/lawyer/company/jobs", label: 'Jobs'
+    },
+    {
+      icon: FaPerson, href: "/dashboard/lawyer/manage-legal-profile", label: 'Manage-Profile'
+    },
+    {
+      icon: FaHistory, href: "/dashboard/lawyer/hiring-history", label: 'Hiring-History'
+    }
+  ]
+  const adminNavLinks = [
+    {
+      icon: House, href: "/dashboard/admin", label: 'Home'
+    },
+    {
+      icon: FaBriefcase, href: "/dashboard/admin/all-transactions", label: 'Transactions'
+    },
+    {
+      icon: FaPerson, href: "/dashboard/lawyer/analytics", label: 'Analytics'
+    },
+    {
+      icon: FaHistory, href: "/dashboard/admin/manage-users", label: 'Manage-users'
+    }
+  ]
+
+  const navLinksMap = {
+    client: clientNavLinks,
+    lawyer: lawyerNavLinks,
+    admin: adminNavLinks
+  }
+
+
+  const navItems = navLinksMap[user.role || 'client'];
+
+
   const navContent = (
     <nav className="flex flex-col gap-1">
       {navItems.map(item => (

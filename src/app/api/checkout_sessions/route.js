@@ -1,30 +1,54 @@
-import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
+import { NextResponse } from "next/server";
+import { stripe } from "@/lib/stripe";
+import { getUserSession } from "@/lib/core/session";
 
-import { stripe } from '../../../lib/stripe'
-
-export async function POST() {
+export async function POST(request) {
   try {
-    const headersList = await headers()
-    const origin = headersList.get('origin')
+    const formData = await request.formData();
 
-    // Create Checkout Sessions from body params.
+    const amount = Number(formData.get("amount"));
+    const lawyerName = formData.get("lawyerName");
+    const hireId = formData.get("hireId");
+const lawyerId = formData.get("lawyerId");
+
+    const user = await getUserSession();
+
+    const origin = new URL(request.url).origin;
+
     const session = await stripe.checkout.sessions.create({
+      customer_email: user?.email,
+
+      payment_method_types: ["card"],
+
       line_items: [
         {
-          // Provide the exact Price ID (for example, price_1234) of the product you want to sell
-          price: '{{PRICE_ID}}',
+          price_data: {
+            currency: "usd", // অথবা bdt support থাকলে bdt
+            product_data: {
+              name: `${lawyerName} Consultation Fee`,
+            },
+            unit_amount: amount * 100,
+          },
           quantity: 1,
         },
       ],
-      mode: 'payment',
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+
+      mode: "payment",
+      metadata: {
+    hireId,
+    lawyerId,
+    clientId: user?.id,
+  },
+
+      success_url: `${origin}/dashboard/client/hiring-history/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/cancel`,
     });
-    return NextResponse.redirect(session.url, 303)
-  } catch (err) {
+
+    return NextResponse.redirect(session.url, 303);
+  } catch (error) {
     return NextResponse.json(
-      { error: err.message },
-      { status: err.statusCode || 500 }
-    )
+      { error: error.message },
+      { status: 500 }
+    );
   }
 }
