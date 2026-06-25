@@ -1,42 +1,39 @@
-import React from "react";
+import { savePayment } from "@/lib/acitons/payment";
 import Link from "next/link";
 import { BiCheckCircle } from "react-icons/bi";
 
 export default async function SuccessPage({ searchParams }) {
   const sp = await searchParams;
-  const sessionId=sp?.session_id
-  console.log(sessionId);
+  const sessionId = sp?.session_id;
 
   try {
     if (sessionId) {
-      const sessionRes = await fetch(
-        `https://api.stripe.com/v1/checkout/sessions/${sessionId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-          },
-        }
-      );
-
+      const sessionRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
+        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+      });
       const session = await sessionRes.json();
-      const hireId = session?.metadata?.hireId;
 
-      if (hireId) {
-        await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/hires/${hireId}/paid`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
+      const paymentPayload = {
+        sessionId: sessionId,
+        hireId: session?.metadata?.hireId,
+        amount: session?.amount_total / 100,
+        customerEmail: session?.customer_details?.email,
+        paymentStatus: session?.payment_status,
+      };
+
+   
+      const paymentResult = await savePayment(paymentPayload);
+
+     
+      if (paymentPayload.hireId) {
+        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/hires/${paymentPayload.hireId}/paid`, {
+          method: "PATCH",
+        });
       }
     }
   } catch (error) {
-    console.error("Payment success update failed:", error);
+    console.error("Payment save failed:", error);
   }
-
   return (
     <div className="min-h-screen bg-[#0b0b10] flex items-center justify-center px-4">
       <div className="w-full max-w-xl text-center">

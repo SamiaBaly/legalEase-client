@@ -1,27 +1,37 @@
 'use client';
 
+import React, { useState } from 'react';
 import { updateHire } from '@/lib/acitons/hire';
 import { useRouter } from 'next/navigation';
-import { FiClock, FiUser, FiBriefcase, FiCheck } from 'react-icons/fi';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
+import { FiCheck, FiX } from 'react-icons/fi';
 
 export default function LawyerHiringHistory({ initialHires = [] }) {
   const router = useRouter();
+  const [hires, setHires] = useState(initialHires);
 
   const getStatusMeta = (status) => {
     const s = (status || '').toLowerCase();
     if (s === 'accepted') {
       return { label: 'Accepted', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20' };
     }
+    if (s === 'rejected') {
+      return { label: 'Rejected', cls: 'bg-red-500/15 text-red-300 border-red-500/20' };
+    }
     return { label: 'Pending', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/20' };
   };
 
-  const handleAccept = async (id) => {
-
-    const result = await updateHire(id, { status: "accepted" })
-
-    if (result.modifiedCount) {
-      toast.success("accepted")
+  const handleStatusUpdate = async (id, status) => {
+    try {
+      const result = await updateHire(id, { status });
+      if (result.modifiedCount) {
+        toast.success(`Request ${status} successfully`);
+        // লোকাল স্টেট আপডেট করা যাতে রিফ্রেশ ছাড়াই দেখা যায়
+        setHires(prev => prev.map(h => h._id === id ? { ...h, status } : h));
+        router.refresh();
+      }
+    } catch (error) {
+      toast.error("Failed to update status");
     }
   };
 
@@ -40,7 +50,7 @@ export default function LawyerHiringHistory({ initialHires = [] }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
-              {initialHires.map((hire) => {
+              {hires.map((hire) => {
                 const statusMeta = getStatusMeta(hire?.status);
 
                 return (
@@ -56,14 +66,24 @@ export default function LawyerHiringHistory({ initialHires = [] }) {
                     </td>
                     <td className="px-6 py-4 text-center">
                       {statusMeta.label === 'Pending' ? (
-                        <button
-                          onClick={() => handleAccept(hire._id)}
-                          className="flex items-center gap-2 mx-auto bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded-xl text-sm font-semibold transition"
-                        >
-                          <FiCheck /> Accept Request
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleStatusUpdate(hire._id, 'accepted')}
+                            className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 px-3 py-2 rounded-xl text-xs font-semibold transition"
+                          >
+                            <FiCheck /> Accept
+                          </button>
+                          <button
+                            onClick={() => handleStatusUpdate(hire._id, 'rejected')}
+                            className="flex items-center gap-1 bg-red-600 hover:bg-red-700 px-3 py-2 rounded-xl text-xs font-semibold transition"
+                          >
+                            <FiX /> Reject
+                          </button>
+                        </div>
                       ) : (
-                        <span className="text-emerald-400 font-semibold text-sm">Already Accepted</span>
+                        <span className="text-zinc-400 text-sm italic">
+                          {statusMeta.label === 'Accepted' ? 'Accepted' : 'Rejected'}
+                        </span>
                       )}
                     </td>
                   </tr>
