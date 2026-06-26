@@ -1,155 +1,119 @@
 'use client';
 
 import React, { useState } from "react";
-import { submitHire } from "@/lib/acitons/hire";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
+import { FiDollarSign, FiClock, FiCheckCircle } from "react-icons/fi";
+import { submitHire } from "@/lib/acitons/hire";
 
-export default function LawyerDetailsClient({
-  lawyer,
-  user,
-  hires = [],
-  existingHire,
-}) {
+export default function LawyerDetailsClient({ lawyer, user, hires = [], existingHire }) {
   const router = useRouter();
-
-  const isClient = user?.role === "client";
-  const clientId = user?._id || user?.id;
-
-  const currentHire =
-    existingHire ||
-    hires.find(
-      (h) =>
-        String(h.lawyerId) === String(lawyer?._id) &&
-        String(h.clientId) === String(clientId)
-    );
-
-  const status = (currentHire?.status || "").toLowerCase();
-  const isPending = status === "pending";
-  const isAccepted = status === "accepted";
-  const isPaid = status === "paid";
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHiredLocally, setIsHiredLocally] = useState(false);
+
+  const isClient = user?.role === "client";
+  const isBusy = lawyer?.isAvailable === false;
+
+  // বর্তমান হায়ারিং স্ট্যাটাস খুঁজে বের করা
+  const currentHire = existingHire || hires.find(
+    (h) => String(h.lawyerId) === String(lawyer?._id) && String(h.clientEmail) === String(user?.email)
+  );
+
+  const status = (currentHire?.status || "").toLowerCase();
+  // অলরেডি হায়ার করা থাকলে বা সবেমাত্র হায়ার করলে এটি True হবে
+  const isPending = ["pending", "accepted", "paid"].includes(status) || isHiredLocally;
 
   const handleHire = async () => {
-    if (!isClient) {
-      toast.error("Only clients can hire lawyers");
-      return;
-    }
-
-    if (isPending || isAccepted || isPaid) {
-      toast.error("You already have a request for this lawyer.");
-      setIsModalOpen(false);
-      return;
-    }
-
     setIsLoading(true);
-
     try {
-      const submissionData = {
+      const res = await submitHire({
         lawyerId: lawyer?._id,
         lawyerName: lawyer?.name,
         clientName: user?.name,
         clientEmail: user?.email,
-        clientId,
+        clientId: user?._id || user?.id,
         lawyerFee: lawyer?.fee,
-        lawyerExperience: lawyer?.experience,
-        lawyerLocation: lawyer?.location,
-        lawyerBio: lawyer?.bio,
         status: "pending",
-      };
-
-      const res = await submitHire(submissionData);
-
-      if (res?.alreadyExists) {
-        toast.error("Hire request already exists");
-        setIsModalOpen(false);
-        router.refresh();
-        return;
-      }
+      });
 
       if (res?.acknowledged || res?.insertedId) {
         toast.success("Request sent successfully!");
+        setIsHiredLocally(true);
         setIsModalOpen(false);
-        // রিডাইরেক্ট করা হচ্ছে
-        router.push("/dashboard/client/my-hires");
+        router.refresh();
+      } else if (res?.alreadyExists) {
+        toast.info("You have already sent a request to this lawyer.");
+        setIsHiredLocally(true);
+        setIsModalOpen(false);
       } else {
-        toast.error("Something went wrong!");
+        toast.error(res?.error || "Failed to process request");
       }
     } catch (error) {
-      toast.error(error?.message || "Failed to send request");
+      toast.error("Something went wrong!");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const buttonDisabled = isPending || isAccepted || isPaid;
-  const buttonText = isPending ? "Request Pending" : isAccepted ? "Accepted" : isPaid ? "Already Hired" : "Hire Lawyer";
-  const statusLabel = isPending ? "Pending" : isAccepted ? "Accepted" : isPaid ? "Paid" : "Available";
-
   return (
-    <div className="min-h-screen bg-black p-4 md:p-8 space-y-6 text-white">
-      {/* Activity Header */}
-      <div className="max-w-4xl mx-auto bg-gray-900 border border-gray-800 rounded-2xl p-6 flex justify-between items-center">
-        <div>
-          <h3 className="text-gray-400 text-xs uppercase">My Activity</h3>
-          <p className="text-xl font-bold mt-1">
-            <span className="text-red-500 uppercase">{user?.name}</span> Total Hired:{" "}
-            <span className="text-indigo-400">{hires.length}</span>
-          </p>
-        </div>
-        <div className={`px-4 py-2 rounded-full text-sm font-semibold border ${isPaid ? "bg-green-500/10 text-green-400 border-green-500/30" : isAccepted ? "bg-blue-500/10 text-blue-400 border-blue-500/30" : isPending ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/30" : "bg-gray-800 text-gray-300 border-gray-700"}`}>
-          {statusLabel}
-        </div>
-      </div>
-
-      {/* Lawyer Details Card */}
-      <div className="max-w-4xl mx-auto bg-gray-900 border border-gray-700 rounded-3xl p-8">
+    <div className="min-h-screen bg-black p-4 md:p-8 text-white">
+      <div className="max-w-4xl mx-auto bg-[#111118] border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl">
         <div className="flex flex-col md:flex-row gap-8">
-          <img src={lawyer?.image} className="w-56 h-56 rounded-2xl object-cover border border-gray-700" alt={lawyer?.name} />
+          <img src={lawyer?.image} className="w-full md:w-56 h-64 md:h-56 rounded-2xl object-cover border border-white/10" alt={lawyer?.name} />
 
-          <div className="flex-1 space-y-5">
+          <div className="flex-1 space-y-4">
             <h1 className="text-4xl font-bold">{lawyer?.name}</h1>
-            <p className="text-gray-400">{lawyer?.bio}</p>
+            <p className="text-white/60 leading-relaxed">{lawyer?.bio}</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-gray-800 p-4 rounded-xl">
-                <p className="text-xs text-gray-400 uppercase">Specialization</p>
-                <p className="text-indigo-300 font-semibold">{lawyer?.specialization}</p>
+            <div className="flex items-center gap-6 mt-4 p-4 bg-white/5 rounded-2xl">
+              <div>
+                <p className="text-white/40 text-xs uppercase">Fee</p>
+                <div className="flex items-center text-cyan-400 font-bold text-xl">
+                  <FiDollarSign /> {lawyer?.fee}
+                </div>
               </div>
-              <div className="bg-gray-800 p-4 rounded-xl">
-                <p className="text-xs text-gray-400 uppercase">Fee</p>
-                <p className="text-green-300 font-semibold">${lawyer?.fee}</p>
+              <div className="h-8 w-px bg-white/10" />
+              <div>
+                <p className="text-white/40 text-xs uppercase">Experience</p>
+                <p className="font-bold text-xl">{lawyer?.lawyerExperience || 5}+ Years</p>
               </div>
             </div>
 
-            {isClient ? (
+            {/* বাটন লজিক: অলরেডি হায়ার করা থাকলে বাটন বদলে স্ট্যাটাস বক্স দেখাবে */}
+            {isClient && (
               <button
-                type="button"
                 onClick={() => setIsModalOpen(true)}
-                disabled={buttonDisabled}
-                className={`w-full py-3 rounded-xl font-bold transition ${buttonDisabled ? "bg-gray-700 text-gray-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-500"}`}
+                // এখানে লজিকটি দেখুন:
+                // status এর মধ্যে 'pending', 'accepted' বা 'paid' থাকলে OR ইদানীং হায়ার করলে
+                disabled={["pending", "accepted", "paid"].includes(status) || isHiredLocally || isBusy || isLoading}
+                className={`w-full py-4 rounded-2xl font-bold transition-all ${(["pending", "accepted", "paid"].includes(status) || isHiredLocally || isBusy)
+                    ? "bg-white/5 text-white/30 cursor-not-allowed border border-white/5" // এটি সব সময় ডিজেবল স্টাইল দেখাবে
+                    : "bg-cyan-600 hover:bg-cyan-500 shadow-lg shadow-cyan-900/20" // সক্রিয় স্টাইল
+                  }`}
               >
-                {buttonText}
+                {isBusy
+                  ? "Not Available: Busy"
+                  : (["pending", "accepted", "paid"].includes(status) || isHiredLocally)
+                    ? "Already Hired" // যখন হায়ার করা হয়ে যাবে, তখন এই টেক্সট দেখাবে
+                    : "Hire Lawyer"
+                }
               </button>
-            ) : (
-              <p className="text-amber-400 text-sm">Only clients can hire lawyers</p>
             )}
           </div>
         </div>
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-gray-900 p-6 rounded-xl w-full max-w-sm border border-gray-700" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-xl font-bold mb-2">Confirm Hire?</h2>
-            <p className="text-sm text-gray-400 mb-5">Are you sure you want to hire {lawyer?.name}?</p>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#111118] p-8 rounded-3xl w-full max-w-sm border border-white/10 shadow-2xl">
+            <h2 className="text-2xl font-bold mb-4">Confirm Hiring</h2>
+            <p className="text-white/60 mb-8">You are hiring <span className="text-white font-semibold">{lawyer?.name}</span> for ${lawyer?.fee}.</p>
             <div className="flex gap-3">
-              <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-700 py-2 rounded-lg font-medium">Cancel</button>
-              <button type="button" onClick={handleHire} disabled={isLoading} className="flex-1 bg-indigo-600 py-2 rounded-lg font-medium">
-                {isLoading ? "Loading..." : "Confirm"}
+              <button onClick={() => setIsModalOpen(false)} className="flex-1 bg-white/5 py-3 rounded-2xl hover:bg-white/10">Cancel</button>
+              <button onClick={handleHire} disabled={isLoading} className="flex-1 bg-cyan-600 py-3 rounded-2xl font-bold hover:bg-cyan-500">
+                {isLoading ? "Processing..." : "Confirm & Pay"}
               </button>
             </div>
           </div>

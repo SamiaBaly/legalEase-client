@@ -1,76 +1,131 @@
+'use client';
+
+import React, { useState } from "react";
+import { Button } from "@heroui/react";
+import { updateUserRole } from "@/lib/acitons/users";
+import Swal from "sweetalert2";
+
+const AdminUserManager = ({ users }) => {
+  const [allUsers] = useState(users?.users || []);
 
 
-"use client"
+  const handleRoleChange = async (userId, role) => {
+    const result = await Swal.fire({
+      title: "Change User Role?",
+      text: `Change this user's role to ${role}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+    });
 
-import { Button } from '@heroui/react';
+    if (!result.isConfirmed) return;
 
+    const res = await updateUserRole(userId, role);
 
-const AdminUserManager =() => {
-  
+    if (res?.success) {
+      setAllUsers((prev) =>
+        prev.map((user) =>
+          user._id === userId
+            ? { ...user, role }
+            : user
+        )
+      );
 
-
-
-  const handleApprove = async (id) => {
-    
-    console.log("Approved ID:", id);
-  
+      Swal.fire("Success!", "Role updated successfully.", "success");
+    }
   };
-
-  const handleReject = async (id) => {
-    
-    console.log("Rejected ID:", id);
-   
-  };
+  const roles = ["client", "lawyer", "admin"];
 
   return (
     <div className="min-h-screen bg-[#111111] p-8 text-white">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Hire for review: {hires.length}</h1>
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Manage Users</h1>
+          <p className="mt-2 text-zinc-400">
+            Change user roles from the dashboard.
+          </p>
+        </div>
 
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden">
-          <table className="w-full text-sm text-left">
-            <thead className="text-zinc-400 border-b border-white/10">
+        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#1b1b1b]">
+          <table className="w-full">
+            <thead className="border-b border-white/10 bg-[#232323]">
               <tr>
-                <th className="p-4 font-medium">Company Name</th>
-                <th className="p-4 font-medium">Recruiter Email</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4 font-medium text-right">Actions</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  Name
+                </th>
+
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  Email
+                </th>
+
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  Current Role
+                </th>
+
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  Change Role
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
-              {hires.map((hire, index) => (
-                <tr key={hire.id || index} className="hover:bg-white/5 transition">
-                
-                  <td className="p-6 font-semibold text-white">
-                    
-                    {hire?.companyName || hire.name || hire.title || "No Name Found"}
-                  </td>
-                  <td className="p-4 text-zinc-400">{hire.email}</td>
-                  <td className="p-4">
-                    <span className="flex items-center gap-2 text-amber-500">
-                      <span className="w-2 h-2 rounded-full bg-current"></span>
-                      {hire.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right space-x-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleApprove(hire._id)}
-                      className="bg-transparent border border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/10"
-                    >
-                      Approve
-                    </Button>
 
-                    <Button
-                      size="sm"
-                      onClick={() => handleReject(hire._id)}
-                      className="bg-transparent border border-red-500/50 text-red-500 hover:bg-red-500/10"
-                    >
-                      Reject
-                    </Button>
+            <tbody>
+              {allUsers.length > 0 ? (
+                allUsers.map((user, index) => (
+                  <tr
+                    key={user._id || user.id || index}
+                    className="border-b border-white/10 transition hover:bg-white/5"
+                  >
+                    <td className="px-6 py-5 font-medium">
+                      {user.name || "N/A"}
+                    </td>
+
+                    <td className="px-6 py-5 text-zinc-400">
+                      {user.email}
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold capitalize text-cyan-400">
+                        {user.role || "client"}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <div className="flex flex-wrap gap-2">
+                        {roles.map((role) => (
+                          <Button
+                            key={role}
+                            size="sm"
+                            variant={
+                              user.role === role ? "solid" : "bordered"
+                            }
+                            color={
+                              user.role === role ? "primary" : "default"
+                            }
+                            className="capitalize"
+                            onPress={() =>
+                              handleRoleChange(
+                                user._id || user.id,
+                                role
+                              )
+                            }
+                          >
+                            {role}
+                          </Button>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="py-10 text-center text-zinc-500"
+                  >
+                    No users found.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

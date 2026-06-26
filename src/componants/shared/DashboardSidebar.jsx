@@ -20,22 +20,23 @@ export function DashboardSidebar({ user }) {
 
 
   const clientNavLinks = [
-    {icon: House, href: "/dashboard/client", label: 'Home'},
-    {icon: FaPerson, href: "/dashboard/client/update-profile", label: 'Manage-Profile'},
-    {icon: FaPerson, href: "/dashboard/client/comments", label: 'Comments-history'},
-    {icon: FaHistory, href: "/dashboard/client/hiring-history", label: 'Hiring-History'}
+    { icon: House, href: "/dashboard/client", label: 'Home' },
+    { icon: FaPerson, href: "/dashboard/client/update-profile", label: 'Manage-Profile' },
+    { icon: FaPerson, href: "/dashboard/client/comments", label: 'Comments-history' },
+    { icon: FaHistory, href: "/dashboard/client/hiring-history", label: 'Hiring-History' },
+    { icon: FaHistory, href: "/dashboard/client/transactions", label: 'Transactions' }
   ]
   const lawyerNavLinks = [
-    {icon: House, href: "/dashboard/lawyer", label: 'Home'},
-    {icon: FaPerson, href: "/dashboard/lawyer/manage-legal-profile/my-post-service", label: 'My-post-service'},
-    {icon: FaPerson, href: "/dashboard/lawyer/manage-legal-profile/post-service", label: 'Post-service'},
-    {icon: FaHistory, href: "/dashboard/lawyer/hiring-history", label: 'Hiring-History'}
+    { icon: House, href: "/dashboard/lawyer", label: 'Home' },
+    { icon: FaPerson, href: "/dashboard/lawyer/manage-legal-profile/my-post-service", label: 'My-post-service' },
+    { icon: FaPerson, href: "/dashboard/lawyer/manage-legal-profile/post-service", label: 'Post-service' },
+    { icon: FaHistory, href: "/dashboard/lawyer/hiring-history", label: 'Hiring-History' }
   ]
   const adminNavLinks = [
-    {icon: House, href: "/dashboard/admin", label: 'Home'},
-    {icon: FaBriefcase, href: "/dashboard/admin/all-transactions", label: 'Transactions'},
-    {icon: FaPerson, href: "/dashboard/lawyer/analytics", label: 'Analytics'},
-    {icon: FaHistory, href: "/dashboard/admin/manage-users", label: 'Manage-users'}
+    { icon: House, href: "/dashboard/admin", label: 'Home' },
+    { icon: FaBriefcase, href: "/dashboard/admin/all-transactions", label: 'Transactions' },
+    { icon: FaPerson, href: "/dashboard/admin/analytics", label: 'Analytics' },
+    { icon: FaHistory, href: "/dashboard/admin/manage-users", label: 'Manage-users' }
   ]
 
   const navLinksMap = {

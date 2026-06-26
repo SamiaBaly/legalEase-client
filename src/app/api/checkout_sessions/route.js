@@ -1,54 +1,41 @@
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { PLAN_PRICE_ID, stripe } from "@/lib/stripe";
 import { getUserSession } from "@/lib/core/session";
 
 export async function POST(request) {
   try {
     const formData = await request.formData();
-
-    const amount = Number(formData.get("amount"));
-    const lawyerName = formData.get("lawyerName");
     const hireId = formData.get("hireId");
-const lawyerId = formData.get("lawyerId");
+    const planId = formData.get("plan_id");
 
     const user = await getUserSession();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const origin = new URL(request.url).origin;
 
+    // স্ট্রাইপ সেশন তৈরি
     const session = await stripe.checkout.sessions.create({
       customer_email: user?.email,
-
       payment_method_types: ["card"],
-
       line_items: [
         {
-          price_data: {
-            currency: "usd", // অথবা bdt support থাকলে bdt
-            product_data: {
-              name: `${lawyerName} Consultation Fee`,
-            },
-            unit_amount: amount * 100,
-          },
+          price: PLAN_PRICE_ID,
           quantity: 1,
         },
       ],
-
-      mode: "payment",
+      mode: "subscription",
       metadata: {
-    hireId,
-    lawyerId,
-    clientId: user?.id,
-  },
-
+        planId,
+        hireId: hireId,
+        clientId: user?.id,
+      },
       success_url: `${origin}/dashboard/client/hiring-history/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cancel`,
     });
 
-    return NextResponse.redirect(session.url, 303);
+    
+    return NextResponse.json({ url: session.url });
   } catch (error) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

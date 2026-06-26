@@ -8,8 +8,8 @@ export const getHiresbById = async (id) => {
   return serverFetch(`/api/hires/${id}`)
   
 }
-export const getHires = async () => { 
-  return serverFetch(`/api/hires`)
+export const getHires = async (data) => { 
+  return serverFetch(`/api/hires`, data)
 }
 
 
@@ -20,6 +20,9 @@ export const getHiresByUser = async (userId) => {
 
 export const getHiresByClient = async (clientId) => { 
   return serverFetch(`/api/hires?clientId=${clientId}`)
+}
+export const getHiresByClientEmail = async (clientEmail) => { 
+  return serverFetch(`/api/hires?clientEmail=${clientEmail}`)
 }
 export const getHiresByLawyer = async (lawyerId) => { 
   return serverFetch(`/api/hires?lawyerId=${lawyerId}`)
