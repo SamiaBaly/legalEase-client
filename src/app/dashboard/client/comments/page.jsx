@@ -158,61 +158,62 @@ const [selectedCommentId, setSelectedCommentId] = useState(null);
             </div>
           ) : (
             <div className="divide-y divide-white/10">
-              {filteredComments.map(comment => {
-                const id = comment?._id?.$oid || comment?._id;
-                const text = comment?.text || 'No comment text available.';
-                const name = comment?.name || comment?.author || 'Anonymous';
-                const email = comment?.email || 'No email';
-                const initial = String(name).trim().charAt(0).toUpperCase() || 'A';
+                  {filteredComments.map(comment => {
+                    console.log("ডাটাবেসের ডাটা:", comment);
+                    // ডাটাবেস থেকে পাওয়া ফিল্ডের নামগুলো এখানে সঠিকভাবে ম্যাপ করা হয়েছে
+                    const id = comment?._id;
+                    const text = comment?.comment || 'No comment text available.'; // ডাটাবেসের ফিল্ডের নাম 'comment'
+                    const name = comment?.clientName || 'Anonymous';              // ডাটাবেসের ফিল্ডের নাম 'clientName'
+                    const email = comment?.email || 'No email';
+                    const initial = String(name).trim().charAt(0).toUpperCase() || 'A';
 
-                return (
-                  <div
-                    key={String(id)}
-                    className="flex flex-col gap-4 p-5 transition hover:bg-white/5 md:flex-row md:items-start md:justify-between"
-                  >
-                    <div className="flex gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 text-sm font-bold text-cyan-200">
-                        {initial}
-                      </div>
+                    return (
+                      <div
+                        key={String(id)}
+                        className="flex flex-col gap-4 p-5 transition hover:bg-white/5 md:flex-row md:items-start md:justify-between"
+                      >
+                        <div className="flex gap-4">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 text-sm font-bold text-cyan-200">
+                            {initial}
+                          </div>
 
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold text-white">{name}</h3>
-                          <span className="rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] text-zinc-400">
-                            {email}
-                          </span>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="font-semibold text-white">{name}</h3>
+                              <span className="rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] text-zinc-400">
+                                {email}
+                              </span>
+                            </div>
+
+                            <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-300">
+                              {text}
+                            </p>
+
+                            <p className="mt-3 text-xs text-zinc-500">
+                              ID: <span className="text-zinc-400">{String(id)}</span>
+                            </p>
+                          </div>
                         </div>
 
-                        <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-300">
-                          {text}
-                        </p>
-
-                        <p className="mt-3 text-xs text-zinc-500">
-                          ID: <span className="text-zinc-400">{String(id)}</span>
-                        </p>
+                        <div className="flex shrink-0 items-center gap-2 md:self-center">
+                          <button
+                            disabled={deletingId === id}
+                            onClick={() => {
+                              setSelectedCommentId(comment._id);
+                              setIsDeleteOpen(true);
+                            }}
+                            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${deletingId === id
+                                ? 'cursor-not-allowed bg-red-500/30 text-red-200'
+                                : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300'
+                              }`}
+                          >
+                            <FiTrash2 />
+                            {deletingId === id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-2 md:self-center">
-                      <button
-                        disabled={deletingId === id}
-                        onClick={() => {
-  setSelectedCommentId(comment._id);
-  setIsDeleteOpen(true);
-}}
-                        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
-                          deletingId === id
-                            ? 'cursor-not-allowed bg-red-500/30 text-red-200'
-                            : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300'
-                        }`}
-                      >
-                        <FiTrash2 />
-                        {deletingId === id ? 'Deleting...' : 'Delete'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
             </div>
           )}
         </div>

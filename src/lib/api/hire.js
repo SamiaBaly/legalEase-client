@@ -24,6 +24,7 @@ export const getHiresByClient = async (clientId) => {
 export const getHiresByClientEmail = async (clientEmail) => { 
   return serverFetch(`/api/hires?clientEmail=${clientEmail}`)
 }
+
 export const getHiresByLawyer = async (lawyerId) => { 
   return serverFetch(`/api/hires?lawyerId=${lawyerId}`)
 }

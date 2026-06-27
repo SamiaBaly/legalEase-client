@@ -2,8 +2,8 @@ import { getUserSession } from "../core/session";
 import { serverFetch } from "../core/sever";
 
 // GET ALL COMMENTS
-export const getComments = async () => {
- return serverFetch("/api/comments");
+export const getComments = async (data) => {
+ return serverFetch("/api/comments", data);
  
 };
 
