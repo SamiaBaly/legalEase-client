@@ -37,6 +37,32 @@ const HireDetailsClient = ({ hire }) => {
     };
   }, [status]);
 
+  const handleCheckout = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+
+    try {
+      const response = await fetch("/api/checkout_sessions", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        
+        window.location.href = data.url;
+      } else {
+        console.error("Error:", data.error);
+        alert("Payment initiation failed: " + (data.error || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+    }
+  };
+
+
+
   return (
     <div className="min-h-[70vh] bg-gradient-to-b from-[#0b0b10] via-[#0f0f14] to-[#0b0b10] px-4 py-10">
       <Card className="mx-auto max-w-4xl overflow-hidden border border-white/10 bg-[#111118] shadow-[0_20px_80px_rgba(0,0,0,0.45)]">
@@ -147,19 +173,19 @@ const HireDetailsClient = ({ hire }) => {
                     Paid Successfully
                   </Button>
                 ) : (
-                  <form action="/api/checkout_sessions" method="POST">
-                    <input type="hidden" name="hireId" value={hire?._id || ""} />
-                    <input type="hidden" name="amount" value={hire?.lawyerFee || ""} />
-                    <input type="hidden" name="lawyerName" value={hire?.lawyerName || ""} />
-                    <input type="hidden" name="lawyerId" value={hire?.lawyerId || ""} />
+                    <form onSubmit={handleCheckout}>
+                      <input type="hidden" name="hireId" value={hire?._id || ""} />
+                      <input type="hidden" name="amount" value={hire?.lawyerFee || ""} />
+                      <input type="hidden" name="lawyerName" value={hire?.lawyerName || ""} />
+                      <input type="hidden" name="lawyerId" value={hire?.lawyerId || ""} />
 
-                    <button
-                      type="submit"
-                      className="w-full rounded-xl bg-cyan-600 py-3 font-semibold text-white hover:bg-cyan-500"
-                    >
-                      Pay Now
-                    </button>
-                  </form>
+                      <button
+                        type="submit"
+                        className="w-full rounded-xl bg-cyan-600 py-3 font-semibold text-white hover:bg-cyan-500"
+                      >
+                        Pay Now
+                      </button>
+                    </form>
                 )}
               </div>
             </div>

@@ -4,7 +4,8 @@ import { getUsersList } from '@/lib/api/users';
 import AdminUserManager from './AdminUserManager';
 
 const userManagePage =async () => {
-  const users=await getUsersList()
+  const data= await getUsersList()
+  const users =data?.users || []
   return (
     <div>
       <AdminUserManager users={users} />

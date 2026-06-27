@@ -9,12 +9,13 @@ import { revalidatePath } from "next/cache";
 export const updateUserRole = async (userId, role) => {
   const data = await auth.api.setRole({
     body: {
-      userId: userId,
-      role: role
+      userId,
+      role
     },
     
     headers: await headers(),
   });
+  console.log(userId, role, "userId and userRole");
 
   revalidatePath("/dashboard/admin/manage-users")
   

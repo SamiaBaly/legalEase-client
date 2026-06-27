@@ -1,82 +1,75 @@
-
-
 import { getPaymentByClientEmail } from "@/lib/api/payment";
 import { getUserSession } from "@/lib/core/session";
+import { FaCreditCard, FaHistory, FaCheckCircle, FaClock } from "react-icons/fa";
 
 const ClientTransactions = async () => {
   const user = await getUserSession();
-  console.log(user,"user");
 
-  if (!user?.id) {
-    return <div>User not logged in</div>;
-  }
+  if (!user?.id) return <div className="text-zinc-500 p-10 text-center">Please log in.</div>;
 
   const result = await getPaymentByClientEmail(user?.email);
   const payments = Array.isArray(result) ? result : [];
   const totalAmount = payments.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-  console.log(result, "result");
 
   return (
-    <div>
-     
-      {!Array.isArray(result) && (
-        <div className="text-red-500 p-4">Error: Could not load transactions.</div>
-      )}
+    <div className="min-h-screen bg-[#0a0a0a] p-6 md:p-12 text-zinc-100">
+      <div className="max-w-5xl mx-auto space-y-8">
 
-      <h1>ClientTransactions</h1>
-      <p>Total Amount: ${totalAmount.toLocaleString()}</p>
-      {/* Header Section */}
-      <div className="max-w-5xl mx-auto mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">My Transactions</h1>
-        <p className="text-gray-600">Your transactions is here</p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500 uppercase">Total Spent</p>
-          <h2 className="text-3xl font-bold text-indigo-600">${totalAmount?.toLocaleString()}</h2>
+        {/* Header */}
+        <div>
+          <h1 className="text-4xl font-black text-white tracking-tight">Transaction History</h1>
+          <p className="text-zinc-500 mt-2">View your payment logs and financial activity.</p>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500 uppercase">Total Transactions</p>
-          <h2 className="text-3xl font-bold text-gray-800">{payments?.length || 0}</h2>
-        </div>
-      </div>
 
-      {/* Table Section */}
-      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>
-              <th className="px-6 py-4 font-semibold text-gray-700">Date</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Payment ID</th>
-              <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
-              <th className="px-6 py-4 font-semibold text-gray-700 text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {payments?.map((pay) => (
-              <tr key={pay._id} className="hover:bg-gray-50 transition">
-                <td className="px-6 py-4 text-gray-600">
-                  {new Date(pay.createAt).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 font-mono text-xs text-gray-500">
-                  {(pay.sessionId ?? "").slice(0, 15)}...
-                </td>
-                <td className="px-6 py-4">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 uppercase">
-                    {pay.paymentStatus}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right font-bold text-gray-800">${pay.amount}</td>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-[#111111] border border-zinc-800 p-8 rounded-3xl shadow-2xl">
+            <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-widest">Total Spent</p>
+            <h2 className="text-4xl font-black mt-2 text-cyan-400">${totalAmount.toLocaleString()}</h2>
+          </div>
+          <div className="bg-[#111111] border border-zinc-800 p-8 rounded-3xl shadow-2xl">
+            <p className="text-zinc-500 font-bold text-[10px] uppercase tracking-widest">Total Transactions</p>
+            <h2 className="text-4xl font-black mt-2 text-white">{payments.length}</h2>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-[#111111] border border-zinc-800 rounded-3xl overflow-hidden">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-[#18181b] border-b border-zinc-800 text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
+                <th className="px-8 py-5">Date</th>
+                <th className="px-8 py-5">Reference</th>
+                <th className="px-8 py-5">Status</th>
+                <th className="px-8 py-5 text-right">Amount</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {(!payments || payments.length === 0) && (
-          <div className="p-10 text-center text-gray-500">No Transactons</div>
-        )}
+            </thead>
+            <tbody className="divide-y divide-zinc-800">
+              {payments.map((pay) => (
+                <tr key={pay._id} className="hover:bg-white/5 transition-colors">
+                  <td className="px-8 py-6 text-sm text-zinc-400">
+                    {new Date(pay.createAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-8 py-6 font-mono text-xs text-zinc-600">
+                    {pay.sessionId?.slice(0, 15)}...
+                  </td>
+                  <td className="px-8 py-6">
+                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${pay.paymentStatus === 'paid'
+                        ? "bg-emerald-500/10 text-emerald-400"
+                        : "bg-amber-500/10 text-amber-400"
+                      }`}>
+                      {pay.paymentStatus === 'paid' ? <FaCheckCircle size={10} /> : <FaClock size={10} />}
+                      {pay.paymentStatus}
+                    </span>
+                  </td>
+                  <td className="px-8 py-6 text-right font-black text-white">
+                    ${pay.amount}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

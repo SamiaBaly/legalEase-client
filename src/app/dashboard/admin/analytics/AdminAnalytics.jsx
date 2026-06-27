@@ -11,10 +11,11 @@ export default function AdminAnalytics({ payment, users, hires = [] }) {
 
  
   const chartData = [
-    { name: 'Users', value: clients.length },
-    { name: 'Lawyers', value: lawyers.length },
+    { name: 'clients', value: clients.length },
     { name: 'Hires', value: hires.length },
     { name: 'Revenue', value: totalRevenue },
+    { name: 'Users', value: allUsers.length },
+    { name: 'Lawyers', value: lawyers.length },
   ];
 
   return (
@@ -22,7 +23,12 @@ export default function AdminAnalytics({ payment, users, hires = [] }) {
       <h1 className="text-3xl font-bold mb-8">Admin Analytics Overview</h1>
 
       {/* মেট্রিকস সেকশন - কোনো কার্ড নেই */}
-      <div className="grid grid-cols-4 gap-8 mb-12">
+      <div className="grid grid-cols-5 gap-8 mb-12">
+        <div className="border border-white/10 p-6 rounded-xl">
+          <p className="text-gray-400 text-sm">Total Users</p>
+          <h2 className="text-4xl font-bold mt-2">{allUsers.length}</h2>
+        </div>
+     
         <div className="border border-white/10 p-6 rounded-xl">
           <p className="text-gray-400 text-sm">Total Users</p>
           <h2 className="text-4xl font-bold mt-2">{clients.length}</h2>
