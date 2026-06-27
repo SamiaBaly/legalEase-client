@@ -33,6 +33,8 @@ export default function LawyerDetailsClient({ lawyer, user, hires = [], existing
       status: "pending",
     });
 
+
+    
     if (res?.acknowledged || res?.insertedId) {
       toast.success("Request sent!");
       setHiredData({ status: "pending" });
